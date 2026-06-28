@@ -1,7 +1,9 @@
 """Execute schema.sql against the MySQL database."""
+import os
 import pymysql
 
-SCHEMA_PATH = r'f:\Users\30306\Desktop\副业\小雷\Y2742-白俄罗斯系统+实习报告（每周一次，总共四次）+论文-开发费：1300\belarus-tourism\backend\schema.sql'
+HERE = os.path.dirname(os.path.abspath(__file__))
+SCHEMA_PATH = os.path.join(HERE, 'schema.sql')
 
 conn = pymysql.connect(host='localhost', user='root', password='123456', charset='utf8mb4')
 cursor = conn.cursor()

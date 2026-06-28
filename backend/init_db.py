@@ -4,12 +4,42 @@ Initialize MySQL database with REAL scraped Belarus tourism data.
 Data sources: Wikipedia, belarus.by, tourismattractions.net, nashaniva.com (2026)
 Run: python init_db.py
 """
+import os
+import re
+import pymysql
 from app import create_app
+from config import Config
 from models import db, User, Attraction, Article, Tag, AttractionTag, Question, Answer
 from werkzeug.security import generate_password_hash
 
-# ─────────────────────────────────────────────────────────
-# REAL BELARUS ATTRACTIONS (scraped from Wikipedia, belarus.by, etc.)
+
+def ensure_database_exists():
+    """
+    Parse Config.SQLALCHEMY_DATABASE_URI and create the database if it
+    does not exist. Avoids the common (1049, 'Unknown database ...') crash
+    the very first time someone runs init_db.py.
+    """
+    uri = Config.SQLALCHEMY_DATABASE_URI
+    m = re.match(r'mysql\+pymysql://([^:]+):([^@]+)@([^:/]+)(?::(\d+))*/([^?]+)', uri)
+    if not m:
+        print(f"  [skip] could not parse DB URI: {uri}")
+        return
+    user, pwd, host, port, dbname = m.groups()
+    port = int(port) if port else 3306
+    print(f"  checking database '{dbname}' on {host}:{port} ...")
+    conn = pymysql.connect(host=host, port=port, user=user, password=pwd, charset='utf8mb4')
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                f"CREATE DATABASE IF NOT EXISTS `{dbname}` "
+                f"CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+            )
+        conn.commit()
+        print(f"  database '{dbname}' ready.")
+    finally:
+        conn.close()
+
+
 # ─────────────────────────────────────────────────────────
 BELARUS_ATTRACTIONS = [
     # ══════════════════════════════════════════════════════════
@@ -728,9 +758,49 @@ BELARUS_ATTRACTIONS = [
 # ─────────────────────────────────────────────────────────
 # Init function
 # ─────────────────────────────────────────────────────────
+def fix_image_urls(app):
+    """
+    Re-point every attraction's image_url to the bundled local file
+    (/static/images/attractions/{id}.jpg) if it exists on disk.
+
+    fetch_images.py downloads the files but sometimes leaves the DB
+    pointing at the original Wikipedia URLs, which fail in offline /
+    firewalled environments.
+    """
+    from models import Attraction
+    img_dir = os.path.join(app.root_path, 'static', 'images', 'attractions')
+    if not os.path.isdir(img_dir):
+        print('  no static/images/attractions directory found, skipping.')
+        return
+    on_disk = {
+        int(os.path.splitext(f)[0])
+        for f in os.listdir(img_dir)
+        if f.lower().endswith(('.jpg', '.jpeg', '.png', '.webp'))
+    }
+    if not on_disk:
+        print('  no local images present, skipping.')
+        return
+    updated, already_local = 0, 0
+    for a in Attraction.query.all():
+        local_rel = f'/static/images/attractions/{a.id}.jpg'
+        if a.image_url == local_rel:
+            already_local += 1
+            continue
+        if a.id in on_disk:
+            a.image_url = local_rel
+            updated += 1
+    if updated:
+        db.session.commit()
+    print(f'  image URLs: {updated} updated, {already_local} already local.')
+
+
 def init_db():
+    ensure_database_exists()
     app = create_app()
     with app.app_context():
+        # Create all tables from SQLAlchemy models if they don't exist yet
+        db.create_all()
+        print('  tables ready.')
         # ── Users ─────────────────────────────────────────
         if User.query.count() == 0:
             admin = User(
@@ -866,8 +936,19 @@ def init_db():
             db.session.commit()
             print('Sample Q&A created')
 
+        # Repair any image URLs that still point at remote sources
+        fix_image_urls(app)
+
         print('Database initialized successfully with REAL Belarus tourism data!')
 
 
 if __name__ == '__main__':
+    print('=' * 60)
+    print(' Belarus Tourism — Database Initialiser')
+    print('=' * 60)
     init_db()
+    print()
+    print('Default accounts:')
+    print('   admin / admin123  (administrator)')
+    print('   demo  / demo123   (regular user)')
+    print('You can now start the API with: python app.py')
