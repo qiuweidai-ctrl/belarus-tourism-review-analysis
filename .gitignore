@@ -28,13 +28,8 @@ instance/*.db
 # Node modules (frontend)
 frontend/node_modules/
 
-# Frontend source code (kept locally but not tracked)
-frontend/
-
 # Frontend build artefacts served by Flask
-backend/static/assets/
-backend/static/images/
-backend/static/index.html
+# (kept in repo so a fresh clone can run the app without re-building)
 
 # Flask instance folder (SQLite dev DB)
 backend/instance/
