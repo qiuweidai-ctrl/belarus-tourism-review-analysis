@@ -29,6 +29,7 @@ export default {
     title: 'All Attractions',
     search: 'Search attractions...',
     filter: 'Filter',
+    allCategories: 'All Categories',
     sort: 'Sort by',
     sortRating: 'Rating',
     sortName: 'Name',

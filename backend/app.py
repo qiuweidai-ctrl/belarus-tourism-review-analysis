@@ -44,7 +44,14 @@ def create_app():
 
     @app.route('/<path:path>')
     def serve_static(path):
-        return send_from_directory('static', path)
+        # If the requested path is a real static file (asset with an extension),
+        # serve it. Otherwise fall back to index.html so the Vue Router can
+        # handle the client-side route (SPA history-mode fallback).
+        import os as _os
+        candidate = _os.path.join(app.static_folder, path)
+        if _os.path.isfile(candidate):
+            return send_from_directory('static', path)
+        return send_from_directory('static', 'index.html')
 
     return app
 

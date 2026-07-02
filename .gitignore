@@ -54,3 +54,22 @@ Thumbs.db
 # Confidential
 credentials.json
 secrets.json
+
+# Temporary helper scripts and build artifacts (not part of the running app)
+_*.py
+_*.txt
+_*.json
+boot.out
+backend/boot.out
+frontend/boot.out
+backend/static/assets/
+
+# Local user images (used only during local development)
+user_img*.png
+
+# Document/report generation helpers (one-off scripts, not part of the running app)
+cleanup_docx_images.py
+insert_screenshots.py
+layout_figure_2_3.py
+take_screenshots.py
+screenshots/

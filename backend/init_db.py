@@ -77,7 +77,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'UNESCO World Heritage — 19th-century geodetic survey points across 10 countries.',
      'location': 'Tupiški, Grodno Oblast', 'city': 'Tupiški', 'region': 'Grodno Oblast',
      'latitude': 54.2833, 'longitude': 26.05, 'category': 'memorial', 'suitable_season': 'All seasons',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Struve-Geodetic-Arc-04.jpg/640px-Struve-Geodetic-Arc-04.jpg',
      'avg_rating': 4.0, 'is_featured': False, 'is_verified': True},
 
     # ══════════════════════════════════════════════════════════
@@ -106,7 +106,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': '13th-century castle — former residence of the Gediminas dynasty, one of the oldest stone castles in Belarus.',
      'location': 'Krevo, Volozhin District, Minsk Oblast', 'city': 'Krevo', 'region': 'Minsk Oblast',
      'latitude': 54.15, 'longitude': 26.8333, 'category': 'castle', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': '09:00 - 17:00', 'ticket_price': 3.00, 'image_url': '',
+     'opening_hours': '09:00 - 17:00', 'ticket_price': 3.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Kreva_Castle_%28hlev_2007%29.jpg/640px-Kreva_Castle_%28hlev_2007%29.jpg',
      'avg_rating': 4.0, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Lubcha Castle', 'name_en': 'Lubcha Castle',
@@ -114,7 +114,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Ruins of the once-largest castle in the Grand Duchy of Lithuania.',
      'location': 'Lubcha, Kletsk District, Minsk Oblast', 'city': 'Lubcha', 'region': 'Minsk Oblast',
      'latitude': 53.0333, 'longitude': 27.05, 'category': 'castle', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': '09:00 - 18:00', 'ticket_price': 3.00, 'image_url': '',
+     'opening_hours': '09:00 - 18:00', 'ticket_price': 3.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Lubcha_castle_ruins.jpg/640px-Lubcha_castle_ruins.jpg',
      'avg_rating': 4.0, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Kamyanets Tower (Belaya Vezha)', 'name_en': 'Kamyanets Tower',
@@ -122,7 +122,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': '13th-century defensive tower — one of the oldest fortifications in Belarus.',
      'location': 'Kamenets, Brest Oblast', 'city': 'Kamenets', 'region': 'Brest Oblast',
      'latitude': 52.2167, 'longitude': 23.8167, 'category': 'castle', 'suitable_season': 'All seasons',
-     'opening_hours': '09:00 - 17:00', 'ticket_price': 2.00, 'image_url': '',
+     'opening_hours': '09:00 - 17:00', 'ticket_price': 2.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Bela_Vezha_Kamyanets_1.jpg/640px-Bela_Vezha_Kamyanets_1.jpg',
      'avg_rating': 4.2, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Minsk Castle (Menski Castle)', 'name_en': 'Minsk Castle',
@@ -130,7 +130,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': '12th-century castle ruins — the historic fortified seat of Minsk princes.',
      'location': 'Minsk, Belarus', 'city': 'Minsk', 'region': 'Minsk',
      'latitude': 53.9053, 'longitude': 27.5558, 'category': 'castle', 'suitable_season': 'All seasons',
-     'opening_hours': 'External viewing only', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'External viewing only', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Mensk_zas%D1%8Dc%D1%8D%D1%8D%D1%8D.jpg/640px-Mensk_zas%D1%8Dc%D1%8D%D1%8D%D1%8D.jpg',
      'avg_rating': 3.5, 'is_featured': False, 'is_verified': True},
 
     # ══════════════════════════════════════════════════════════
@@ -159,7 +159,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Memorial to victims of Stalinist repressions — mass grave site of NKVD killings (1937-1941).',
      'location': 'Kurapaty, Minsk', 'city': 'Minsk', 'region': 'Minsk',
      'latitude': 53.9333, 'longitude': 27.5833, 'category': 'memorial', 'suitable_season': 'All seasons',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Kurapaty_-_panoramio.jpg/640px-Kurapaty_-_panoramio.jpg',
      'avg_rating': 4.3, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Island of Tears Memorial', 'name_en': 'Island of Tears Memorial',
@@ -167,7 +167,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Memorial to Belarusian soldiers who died in the Soviet-Afghan War, on an island in the Svislach River.',
      'location': 'Minsk, Belarus', 'city': 'Minsk', 'region': 'Minsk',
      'latitude': 53.9083, 'longitude': 27.555, 'category': 'memorial', 'suitable_season': 'All seasons',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Minsk_Ostrov_Slyoz.jpg/640px-Minsk_Ostrov_Slyoz.jpg',
      'avg_rating': 4.3, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Plamya (Eternal Flame) Memorial', 'name_en': 'Plamya Memorial',
@@ -175,7 +175,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Eternal flame memorial in central Minsk honouring all Belarusian war casualties.',
      'location': 'Victory Square, Minsk', 'city': 'Minsk', 'region': 'Minsk',
      'latitude': 53.9083, 'longitude': 27.5725, 'category': 'memorial', 'suitable_season': 'All seasons',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Minsk_Pobedy_square.jpg/640px-Minsk_Pobedy_square.jpg',
      'avg_rating': 4.2, 'is_featured': False, 'is_verified': True},
 
     # ══════════════════════════════════════════════════════════
@@ -204,7 +204,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Open-air ethnographical museum — authentic relocated wooden village buildings from across Belarus.',
      'location': 'Ozertsy, Minsk Oblast', 'city': 'Ozertsy', 'region': 'Minsk Oblast',
      'latitude': 54.0167, 'longitude': 27.6333, 'category': 'museum', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': '10:00 - 17:00 (Wed-Mon)', 'ticket_price': 4.00, 'image_url': '',
+     'opening_hours': '10:00 - 17:00 (Wed-Mon)', 'ticket_price': 4.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Ozertsy_Museum_of_Architecture_2.jpg/640px-Ozertsy_Museum_of_Architecture_2.jpg',
      'avg_rating': 4.3, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Gomel Palace Museum', 'name_en': 'Gomel Palace Museum',
@@ -212,7 +212,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Decorative arts, weapons, and paintings in the historic Rumyantsev-Paskevich Palace.',
      'location': 'Gomel, Belarus', 'city': 'Gomel', 'region': 'Gomel Oblast',
      'latitude': 52.4411, 'longitude': 30.9933, 'category': 'museum', 'suitable_season': 'All seasons',
-     'opening_hours': '10:00 - 18:00 (Wed-Mon)', 'ticket_price': 5.00, 'image_url': '',
+     'opening_hours': '10:00 - 18:00 (Wed-Mon)', 'ticket_price': 5.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Gomel_Palace_Paskevich.jpg/640px-Gomel_Palace_Paskevich.jpg',
      'avg_rating': 4.2, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Marc Chagall Museum', 'name_en': 'Marc Chagall Museum',
@@ -220,7 +220,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Largest Belarusian collection of Marc Chagall\'s works — in the artist\'s hometown of Vitebsk.',
      'location': 'Vitebsk, Belarus', 'city': 'Vitebsk', 'region': 'Vitebsk Oblast',
      'latitude': 55.195, 'longitude': 30.205, 'category': 'museum', 'suitable_season': 'All seasons',
-     'opening_hours': '10:00 - 17:00 (Tue-Sun)', 'ticket_price': 4.00, 'image_url': '',
+     'opening_hours': '10:00 - 17:00 (Tue-Sun)', 'ticket_price': 4.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Vitebsk_Chagall_Museum.jpg/640px-Vitebsk_Chagall_Museum.jpg',
      'avg_rating': 4.4, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Mogilev Regional Museum', 'name_en': 'Mogilev Regional Museum',
@@ -228,7 +228,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Local history of Mogilev — one of Belarus oldest cities, on the Dnieper River.',
      'location': 'Mogilev, Belarus', 'city': 'Mogilev', 'region': 'Mogilev Oblast',
      'latitude': 53.9167, 'longitude': 30.35, 'category': 'museum', 'suitable_season': 'All seasons',
-     'opening_hours': '10:00 - 17:00 (Tue-Sun)', 'ticket_price': 3.00, 'image_url': '',
+     'opening_hours': '10:00 - 17:00 (Tue-Sun)', 'ticket_price': 3.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Mogilev_Museum.jpg/640px-Mogilev_Museum.jpg',
      'avg_rating': 4.0, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Berestye Archaeological Museum', 'name_en': 'Berestye Museum',
@@ -236,7 +236,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Medieval Slavic settlement museum — 13th-century ruins with reconstructed period interiors.',
      'location': 'Brest, Belarus', 'city': 'Brest', 'region': 'Brest Oblast',
      'latitude': 52.095, 'longitude': 23.69, 'category': 'museum', 'suitable_season': 'All seasons',
-     'opening_hours': '10:00 - 18:00', 'ticket_price': 3.00, 'image_url': '',
+     'opening_hours': '10:00 - 18:00', 'ticket_price': 3.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Berestye_archaeological_museum.jpg/640px-Berestye_archaeological_museum.jpg',
      'avg_rating': 4.1, 'is_featured': False, 'is_verified': True},
 
     # ══════════════════════════════════════════════════════════
@@ -247,7 +247,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': '12th-century church — one of the oldest surviving structures in Belarus, in active worship.',
      'location': 'Grodno, Belarus', 'city': 'Grodno', 'region': 'Grodno Oblast',
      'latitude': 53.6833, 'longitude': 23.8333, 'category': 'church', 'suitable_season': 'All seasons',
-     'opening_hours': '07:00 - 19:00', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': '07:00 - 19:00', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Kaloza_Grodno_2.jpg/640px-Kaloza_Grodno_2.jpg',
      'avg_rating': 4.5, 'is_featured': True, 'is_verified': True},
 
     {'name': 'Holy Trinity Church in Gierviaty', 'name_en': 'Holy Trinity Church, Gierviaty',
@@ -264,7 +264,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'The oldest cathedral in Belarus — 11th century, rebuilt in Baroque style with Rococo facade.',
      'location': 'Polotsk, Vitebsk Oblast', 'city': 'Polotsk', 'region': 'Vitebsk Oblast',
      'latitude': 55.5, 'longitude': 28.7667, 'category': 'church', 'suitable_season': 'All seasons',
-     'opening_hours': '09:00 - 18:00', 'ticket_price': 4.00, 'image_url': '',
+     'opening_hours': '09:00 - 18:00', 'ticket_price': 4.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Saint_Sophia_Cathedral_in_Polatsk.jpg/640px-Saint_Sophia_Cathedral_in_Polatsk.jpg',
      'avg_rating': 4.4, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Holy Trinity Cathedral, Minsk', 'name_en': 'Holy Trinity Cathedral, Minsk',
@@ -272,7 +272,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': '17th-century Eastern Orthodox cathedral — one of the oldest buildings in Minsk.',
      'location': 'Minsk, Belarus', 'city': 'Minsk', 'region': 'Minsk',
      'latitude': 53.9053, 'longitude': 27.5558, 'category': 'church', 'suitable_season': 'All seasons',
-     'opening_hours': '07:00 - 20:00', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': '07:00 - 20:00', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Troickaye_subcastie_Minsk.jpg/640px-Troickaye_subcastie_Minsk.jpg',
      'avg_rating': 4.2, 'is_featured': False, 'is_verified': True},
 
     {'name': 'St. Simon and Helena Church (Red Church)', 'name_en': 'Red Church, Minsk',
@@ -289,7 +289,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': '16th-century Orthodox monastery with iconic tent-roof belfry on the Sozh River.',
      'location': 'Gomel, Belarus', 'city': 'Gomel', 'region': 'Gomel Oblast',
      'latitude': 52.4333, 'longitude': 30.9833, 'category': 'church', 'suitable_season': 'All seasons',
-     'opening_hours': '06:00 - 20:00', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': '06:00 - 20:00', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/Gomel_Nikolsky_monastyr.jpg/640px-Gomel_Nikolsky_monastyr.jpg',
      'avg_rating': 4.3, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Zhyrovichy Monastery', 'name_en': 'Zhyrovichy Monastery',
@@ -297,7 +297,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': '16th-century Orthodox monastery — major pilgrimage site for the miraculous Zhyrovichy icon.',
      'location': 'Zhyrovichy, Slavgorod District, Mogilev Oblast', 'city': 'Zhyrovichy', 'region': 'Mogilev Oblast',
      'latitude': 53.4333, 'longitude': 31.55, 'category': 'church', 'suitable_season': 'All seasons',
-     'opening_hours': '06:00 - 20:00', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': '06:00 - 20:00', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Zhyrovichy_monastery.jpg/640px-Zhyrovichy_monastery.jpg',
      'avg_rating': 4.2, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Borisoglebskaya Church, Mogilev', 'name_en': 'Borisoglebskaya Church, Mogilev',
@@ -305,7 +305,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Late 17th-century wooden baroque church — one of the oldest in eastern Belarus.',
      'location': 'Mogilev, Belarus', 'city': 'Mogilev', 'region': 'Mogilev Oblast',
      'latitude': 53.9167, 'longitude': 30.3333, 'category': 'church', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': 'By arrangement', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'By arrangement', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Barysagleb_Mogilev.jpg/640px-Barysagleb_Mogilev.jpg',
      'avg_rating': 4.1, 'is_featured': False, 'is_verified': True},
 
     # ══════════════════════════════════════════════════════════
@@ -316,7 +316,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Palace featured on the 20-ruble note — neoclassical ensemble with park on the Sozh River.',
      'location': 'Gomel, Belarus', 'city': 'Gomel', 'region': 'Gomel Oblast',
      'latitude': 52.4411, 'longitude': 30.9933, 'category': 'palace', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': '10:00 - 18:00 (Wed-Mon)', 'ticket_price': 6.00, 'image_url': '',
+     'opening_hours': '10:00 - 18:00 (Wed-Mon)', 'ticket_price': 6.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Rumyantsev_Paskevich_Palace_Gomel.jpg/640px-Rumyantsev_Paskevich_Palace_Gomel.jpg',
      'avg_rating': 4.4, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Kosava Palace', 'name_en': 'Kosava Palace',
@@ -324,7 +324,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Baroque magnate palace of the 18th century — one of the most visited sites in 2026.',
      'location': 'Kosava, Pruzhany District, Brest Oblast', 'city': 'Kosava', 'region': 'Brest Oblast',
      'latitude': 52.4167, 'longitude': 24.3667, 'category': 'palace', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': '10:00 - 17:00', 'ticket_price': 5.00, 'image_url': '',
+     'opening_hours': '10:00 - 17:00', 'ticket_price': 5.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Kossau_palace_2010.jpg/640px-Kossau_palace_2010.jpg',
      'avg_rating': 4.2, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Mikhail Kleofas Oginski Museum-Estate', 'name_en': 'Oginski Museum-Estate',
@@ -332,7 +332,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Estate of Prince Oginski — composer of the famous polandaise, patron of the arts.',
      'location': 'Zalessye, Mogilev Oblast', 'city': 'Zalessye', 'region': 'Mogilev Oblast',
      'latitude': 54.0, 'longitude': 31.35, 'category': 'palace', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': '10:00 - 17:00 (Tue-Sun)', 'ticket_price': 4.00, 'image_url': '',
+     'opening_hours': '10:00 - 17:00 (Tue-Sun)', 'ticket_price': 4.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Oginski_Zalesye_Mogilev.jpg/640px-Oginski_Zalesye_Mogilev.jpg',
      'avg_rating': 4.1, 'is_featured': False, 'is_verified': True},
 
     # ══════════════════════════════════════════════════════════
@@ -361,7 +361,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Pripyat River wetlands with primeval forests — bison, wolves, and white-tailed eagles.',
      'location': 'Turov, Zhitkovichi District, Gomel Oblast', 'city': 'Turov', 'region': 'Gomel Oblast',
      'latitude': 52.05, 'longitude': 27.7333, 'category': 'nature', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Pripyatsky_National_Park.jpg/640px-Pripyatsky_National_Park.jpg',
      'avg_rating': 4.4, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Berezina Biosphere Reserve', 'name_en': 'Berezina Biosphere Reserve',
@@ -369,7 +369,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': "UNESCO Biosphere Reserve — Europe's largest river floodplain ecosystem with bison.",
      'location': 'Zhonka, Berezina District, Minsk Oblast', 'city': 'Zhonka', 'region': 'Minsk Oblast',
      'latitude': 53.5, 'longitude': 28.5, 'category': 'nature', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': '09:00 - 17:00', 'ticket_price': 2.00, 'image_url': '',
+     'opening_hours': '09:00 - 17:00', 'ticket_price': 2.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Berezina_biosphere_reserve.jpg/640px-Berezina_biosphere_reserve.jpg',
      'avg_rating': 4.3, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Turov Riverside (Bison Crossing)', 'name_en': 'Turov Riverside',
@@ -377,7 +377,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Pripyat River at Turov — famous for bison crossing, one of Belarus oldest towns.',
      'location': 'Turov, Zhitkovichi District, Gomel Oblast', 'city': 'Turov', 'region': 'Gomel Oblast',
      'latitude': 52.0667, 'longitude': 27.7333, 'category': 'nature', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Turov_meadow_Pripyat.jpg/640px-Turov_meadow_Pripyat.jpg',
      'avg_rating': 4.2, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Khotlitsa River Canyon', 'name_en': 'Khotlitsa River Canyon',
@@ -385,7 +385,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Dramatic sandstone river canyon — steep cliffs and spectacular hiking trails.',
      'location': 'Beshankovichy District, Vitebsk Oblast', 'city': 'Beshankovichy', 'region': 'Vitebsk Oblast',
      'latitude': 55.0333, 'longitude': 29.3333, 'category': 'nature', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Khotlitsa_canyon.jpg/640px-Khotlitsa_canyon.jpg',
      'avg_rating': 4.3, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Mikashevichy Chalk Quarries', 'name_en': 'Mikashevichy Chalk Quarries',
@@ -393,7 +393,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'White chalk quarry walls — striking geological formations and landscape photography.',
      'location': 'Mikashevichy, Zhlobin District, Gomel Oblast', 'city': 'Mikashevichy', 'region': 'Gomel Oblast',
      'latitude': 52.9167, 'longitude': 29.8333, 'category': 'nature', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Mikashevichy_chalk_quarries.jpg/640px-Mikashevichy_chalk_quarries.jpg',
      'avg_rating': 4.1, 'is_featured': False, 'is_verified': True},
 
     # ══════════════════════════════════════════════════════════
@@ -413,7 +413,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': '15km main boulevard — Stalinist neoclassical architecture, government buildings, and city life.',
      'location': 'Minsk, Belarus', 'city': 'Minsk', 'region': 'Minsk',
      'latitude': 53.9167, 'longitude': 27.5667, 'category': 'architecture', 'suitable_season': 'All seasons',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Minsk_Nezavisimosti_Avenue.jpg/640px-Minsk_Nezavisimosti_Avenue.jpg',
      'avg_rating': 4.3, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Minsk Metro (Ornate Stations)', 'name_en': 'Minsk Metro Stations',
@@ -421,7 +421,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Underground palaces — marble, chandeliers, stained glass, and Belarusian history mosaics.',
      'location': 'Minsk Metro', 'city': 'Minsk', 'region': 'Minsk',
      'latitude': 53.9167, 'longitude': 27.5667, 'category': 'architecture', 'suitable_season': 'All seasons',
-     'opening_hours': '05:30 - 01:00', 'ticket_price': 0.65, 'image_url': '',
+     'opening_hours': '05:30 - 01:00', 'ticket_price': 0.65, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Minsk_Metro_Kastrychnitskaya.jpg/640px-Minsk_Metro_Kastrychnitskaya.jpg',
      'avg_rating': 4.6, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Upper Town (Vyšni Horad)', 'name_en': 'Upper Town, Minsk',
@@ -429,7 +429,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': "Minsk's oldest district — baroque churches, cobblestone streets, and riverside terraces.",
      'location': 'Minsk, Belarus', 'city': 'Minsk', 'region': 'Minsk',
      'latitude': 53.9053, 'longitude': 27.5558, 'category': 'architecture', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Minsk_Upper_Town_Trinity_Hill.jpg/640px-Minsk_Upper_Town_Trinity_Hill.jpg',
      'avg_rating': 4.2, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Gorky Central Park of Culture and Rest', 'name_en': 'Gorky Park, Minsk',
@@ -437,7 +437,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': "Minsk's most popular park — rides, lake, boat rentals, sports facilities, and concerts.",
      'location': 'Minsk, Belarus', 'city': 'Minsk', 'region': 'Minsk',
      'latitude': 53.9167, 'longitude': 27.5333, 'category': 'park', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Minsk_Gorky_park.jpg/640px-Minsk_Gorky_park.jpg',
      'avg_rating': 4.3, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Minsk Sea Reservoir', 'name_en': 'Minsk Sea',
@@ -445,7 +445,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Large artificial reservoir — swimming, windsurfing, beach recreation, and ice sailing in winter.',
      'location': 'Minsk District, Minsk Oblast', 'city': 'Minsk', 'region': 'Minsk Oblast',
      'latitude': 53.95, 'longitude': 27.5, 'category': 'nature', 'suitable_season': 'Summer',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Minsk_Sea_Reservoir.jpg/640px-Minsk_Sea_Reservoir.jpg',
      'avg_rating': 4.2, 'is_featured': False, 'is_verified': True},
 
     # ══════════════════════════════════════════════════════════
@@ -456,7 +456,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Pripyat River wetlands — oxbow lakes, waterfowl, and migratory bird corridor.',
      'location': 'Drahichyn District, Brest Oblast', 'city': 'Drahichyn', 'region': 'Brest Oblast',
      'latitude': 52.1833, 'longitude': 25.15, 'category': 'nature', 'suitable_season': 'Spring, Summer',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Pripyat_floodplain.jpg/640px-Pripyat_floodplain.jpg',
      'avg_rating': 4.2, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Yelnya Bog', 'name_en': 'Yelnya Peat Bog',
@@ -464,7 +464,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': "Belarus's largest high moor — ancient ecosystem formed during the glacial period.",
      'location': 'Krychaw District, Gomel Oblast', 'city': 'Krychaw', 'region': 'Gomel Oblast',
      'latitude': 53.7, 'longitude': 31.85, 'category': 'nature', 'suitable_season': 'Summer',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Yelnya_bog.jpg/640px-Yelnya_bog.jpg',
      'avg_rating': 4.0, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Mogilev Botanical Garden', 'name_en': 'Mogilev Botanical Garden',
@@ -472,7 +472,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': '67-hectare botanical garden — ornamental plants, greenhouses, and a nature education centre.',
      'location': 'Mogilev, Belarus', 'city': 'Mogilev', 'region': 'Mogilev Oblast',
      'latitude': 53.9333, 'longitude': 30.3667, 'category': 'nature', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': '08:00 - 18:00', 'ticket_price': 2.00, 'image_url': '',
+     'opening_hours': '08:00 - 18:00', 'ticket_price': 2.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Mogilev_botanical_garden.jpg/640px-Mogilev_botanical_garden.jpg',
      'avg_rating': 4.0, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Vitebsk Botanical Garden', 'name_en': 'Vitebsk Botanical Garden',
@@ -480,7 +480,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': '1910 botanical garden — renowned rose, lily, and hosta collections on the Western Dvina.',
      'location': 'Vitebsk, Belarus', 'city': 'Vitebsk', 'region': 'Vitebsk Oblast',
      'latitude': 55.1833, 'longitude': 30.2167, 'category': 'nature', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': '08:00 - 18:00', 'ticket_price': 2.00, 'image_url': '',
+     'opening_hours': '08:00 - 18:00', 'ticket_price': 2.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Vitebsk_botanical_garden.jpg/640px-Vitebsk_botanical_garden.jpg',
      'avg_rating': 4.1, 'is_featured': False, 'is_verified': True},
 
     # ══════════════════════════════════════════════════════════
@@ -491,7 +491,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Well-preserved old town — buildings from the 13th to 19th centuries, genuine historical atmosphere.',
      'location': 'Grodno, Belarus', 'city': 'Grodno', 'region': 'Grodno Oblast',
      'latitude': 53.6833, 'longitude': 23.8333, 'category': 'architecture', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Grodno_Old_Town_Sovetskaya.jpg/640px-Grodno_Old_Town_Sovetskaya.jpg',
      'avg_rating': 4.4, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Polotsk Old Town', 'name_en': 'Polotsk Old Town',
@@ -499,7 +499,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': "One of Belarus's oldest cities — 9th-century principality capital with medieval churches.",
      'location': 'Polotsk, Vitebsk Oblast', 'city': 'Polotsk', 'region': 'Vitebsk Oblast',
      'latitude': 55.5, 'longitude': 28.7667, 'category': 'architecture', 'suitable_season': 'All seasons',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Polatsk_lower_town.jpg/640px-Polatsk_lower_town.jpg',
      'avg_rating': 4.3, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Krychaw Old Town', 'name_en': 'Krychaw',
@@ -507,7 +507,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': '12th-century town on the Sozh River — wooden churches and the Trinity Monastery.',
      'location': 'Krychaw, Gomel Oblast', 'city': 'Krychaw', 'region': 'Gomel Oblast',
      'latitude': 53.7167, 'longitude': 31.7167, 'category': 'architecture', 'suitable_season': 'All seasons',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Krychaw.jpg/640px-Krychaw.jpg',
      'avg_rating': 4.2, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Pyetrykaw', 'name_en': 'Pyetrykaw',
@@ -515,7 +515,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': "One of Belarus's oldest towns — at the confluence of the Dnieper and Sozh rivers.",
      'location': 'Pyetrykaw, Gomel Oblast', 'city': 'Pyetrykaw', 'region': 'Gomel Oblast',
      'latitude': 52.1333, 'longitude': 28.5, 'category': 'architecture', 'suitable_season': 'All seasons',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Petrikov.jpg/640px-Petrikov.jpg',
      'avg_rating': 4.0, 'is_featured': False, 'is_verified': True},
 
     # ══════════════════════════════════════════════════════════
@@ -526,7 +526,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Venue for the annual Slavianski Bazaar — the largest cultural festival in Eastern Europe.',
      'location': 'Vitebsk, Belarus', 'city': 'Vitebsk', 'region': 'Vitebsk Oblast',
      'latitude': 55.1967, 'longitude': 30.21, 'category': 'architecture', 'suitable_season': 'Summer (July)',
-     'opening_hours': 'Festival season only', 'ticket_price': 10.00, 'image_url': '',
+     'opening_hours': 'Festival season only', 'ticket_price': 10.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Slavianski_Bazaar_amphitheatre.jpg/640px-Slavianski_Bazaar_amphitheatre.jpg',
      'avg_rating': 4.5, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Vitebsk Regional Museum', 'name_en': 'Vitebsk Regional Museum',
@@ -534,7 +534,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'History of Vitebsk Oblast — archaeology, Chagall period, and regional culture.',
      'location': 'Vitebsk, Belarus', 'city': 'Vitebsk', 'region': 'Vitebsk Oblast',
      'latitude': 55.19, 'longitude': 30.205, 'category': 'museum', 'suitable_season': 'All seasons',
-     'opening_hours': '10:00 - 17:00 (Wed-Sun)', 'ticket_price': 3.00, 'image_url': '',
+     'opening_hours': '10:00 - 17:00 (Wed-Sun)', 'ticket_price': 3.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Vitebsk_regional_museum.jpg/640px-Vitebsk_regional_museum.jpg',
      'avg_rating': 4.1, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Brest Regional Museum', 'name_en': 'Brest Regional Museum',
@@ -542,7 +542,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Brest Oblast history, nature, and culture — from prehistoric times to today.',
      'location': 'Brest, Belarus', 'city': 'Brest', 'region': 'Brest Oblast',
      'latitude': 52.0983, 'longitude': 23.6917, 'category': 'museum', 'suitable_season': 'All seasons',
-     'opening_hours': '10:00 - 18:00 (Tue-Sun)', 'ticket_price': 3.00, 'image_url': '',
+     'opening_hours': '10:00 - 18:00 (Tue-Sun)', 'ticket_price': 3.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Brest_museum.jpg/640px-Brest_museum.jpg',
      'avg_rating': 4.0, 'is_featured': False, 'is_verified': True},
 
     # ══════════════════════════════════════════════════════════
@@ -553,7 +553,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Glacial lake cluster near Vileyka — fishing, kayaking, and a tranquil environment.',
      'location': 'Vileyka, Minsk Oblast', 'city': 'Vileyka', 'region': 'Minsk Oblast',
      'latitude': 54.75, 'longitude': 26.9, 'category': 'nature', 'suitable_season': 'Summer',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Vileyka_lake.jpg/640px-Vileyka_lake.jpg',
      'avg_rating': 4.1, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Sozh River Valley', 'name_en': 'Sozh River Valley',
@@ -561,7 +561,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Scenic Sozh River valley — historic villages, boating, and fishing.',
      'location': 'Krychaw, Gomel Oblast', 'city': 'Krychaw', 'region': 'Gomel Oblast',
      'latitude': 53.7167, 'longitude': 31.7167, 'category': 'nature', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Sozh_River.jpg/640px-Sozh_River.jpg',
      'avg_rating': 4.1, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Svislach River Embankment', 'name_en': 'Svislach River Embankment, Minsk',
@@ -569,7 +569,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Scenic riverside promenade — fountains, sculptures, and illuminated walkways in central Minsk.',
      'location': 'Minsk, Belarus', 'city': 'Minsk', 'region': 'Minsk',
      'latitude': 53.9083, 'longitude': 27.555, 'category': 'park', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Minsk_Svisloch_embankment.jpg/640px-Minsk_Svisloch_embankment.jpg',
      'avg_rating': 4.4, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Loshitsa Park (Mikhail Lositsky Estate)', 'name_en': 'Loshitsa Park, Minsk',
@@ -577,7 +577,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Historic estate park — neoclassical manor, French-style garden, cultural venue.',
      'location': 'Minsk, Belarus', 'city': 'Minsk', 'region': 'Minsk',
      'latitude': 53.8833, 'longitude': 27.55, 'category': 'park', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': '08:00 - 22:00', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': '08:00 - 22:00', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Loshitsa_Minsk.jpg/640px-Loshitsa_Minsk.jpg',
      'avg_rating': 4.2, 'is_featured': False, 'is_verified': True},
 
     # ══════════════════════════════════════════════════════════
@@ -588,7 +588,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': '19th-century canal — engineering feat with 18 locks, popular for canoeing and cycling.',
      'location': 'Augustow Canal, Grodno Oblast', 'city': 'Augustow', 'region': 'Grodno Oblast',
      'latitude': 53.8333, 'longitude': 23.0, 'category': 'nature', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Augustow_Canal_Belarus.jpg/640px-Augustow_Canal_Belarus.jpg',
      'avg_rating': 4.3, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Berezina Canal Locks', 'name_en': 'Berezina Canal Locks',
@@ -596,7 +596,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': '18th-century canal lock system — engineering feat connecting major river basins.',
      'location': 'Berezina Canal, Minsk Oblast', 'city': 'Borisov', 'region': 'Minsk Oblast',
      'latitude': 54.25, 'longitude': 28.5, 'category': 'architecture', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Berezina_canal_locks.jpg/640px-Berezina_canal_locks.jpg',
      'avg_rating': 4.0, 'is_featured': False, 'is_verified': True},
 
     # ══════════════════════════════════════════════════════════
@@ -607,7 +607,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': "1,000-year history of Polotsk — housed in an 18th-century Jesuit college.",
      'location': 'Polotsk, Vitebsk Oblast', 'city': 'Polotsk', 'region': 'Vitebsk Oblast',
      'latitude': 55.5, 'longitude': 28.8, 'category': 'museum', 'suitable_season': 'All seasons',
-     'opening_hours': '10:00 - 17:00 (Wed-Sun)', 'ticket_price': 3.00, 'image_url': '',
+     'opening_hours': '10:00 - 17:00 (Wed-Sun)', 'ticket_price': 3.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Polatsk_museum_of_local_history.jpg/640px-Polatsk_museum_of_local_history.jpg',
      'avg_rating': 4.1, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Dudutki Folk Museum', 'name_en': 'Dudutki Open-Air Museum',
@@ -615,7 +615,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Open-air ethnographic museum — traditional crafts, food, and horse riding south of Minsk.',
      'location': 'Dukora, Pukhovichi District, Minsk Oblast', 'city': 'Dukora', 'region': 'Minsk Oblast',
      'latitude': 53.6167, 'longitude': 28.0333, 'category': 'museum', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': '10:00 - 17:00', 'ticket_price': 6.00, 'image_url': '',
+     'opening_hours': '10:00 - 17:00', 'ticket_price': 6.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Dudutki_museum.jpg/640px-Dudutki_museum.jpg',
      'avg_rating': 4.3, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Copernicus House, Polotsk', 'name_en': 'Copernicus House, Polotsk',
@@ -623,7 +623,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Museum dedicated to Copernicus — linked to his maternal family in Polotsk.',
      'location': 'Polotsk, Vitebsk Oblast', 'city': 'Polotsk', 'region': 'Vitebsk Oblast',
      'latitude': 55.5, 'longitude': 28.7667, 'category': 'museum', 'suitable_season': 'All seasons',
-     'opening_hours': '10:00 - 17:00 (Tue-Sun)', 'ticket_price': 3.00, 'image_url': '',
+     'opening_hours': '10:00 - 17:00 (Tue-Sun)', 'ticket_price': 3.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Polatsk_Muzeum_Copernicana.jpg/640px-Polatsk_Muzeum_Copernicana.jpg',
      'avg_rating': 4.0, 'is_featured': False, 'is_verified': True},
 
     # ══════════════════════════════════════════════════════════
@@ -634,7 +634,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Vast Pripyat floodplain forest — elk, deer, wild boar, and nature trails.',
      'location': 'Drahichyn, Brest Oblast', 'city': 'Drahichyn', 'region': 'Brest Oblast',
      'latitude': 52.2, 'longitude': 25.15, 'category': 'nature', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Drahichyn_forest.jpg/640px-Drahichyn_forest.jpg',
      'avg_rating': 4.0, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Rossony Lake District', 'name_en': 'Rossony',
@@ -642,7 +642,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Remote lake district near borders — kayaking, nature observation, and solitude.',
      'location': 'Rossony, Vitebsk Oblast', 'city': 'Rossony', 'region': 'Vitebsk Oblast',
      'latitude': 56.0, 'longitude': 28.8333, 'category': 'nature', 'suitable_season': 'Summer',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Rossony_lake_district.jpg/640px-Rossony_lake_district.jpg',
      'avg_rating': 4.0, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Logoisk Forests', 'name_en': 'Logoisk',
@@ -650,7 +650,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Former tsarist hunting grounds — forests near Berezina Reserve, mushroom picking.',
      'location': 'Logoisk, Minsk Oblast', 'city': 'Logoisk', 'region': 'Minsk Oblast',
      'latitude': 53.9833, 'longitude': 27.7, 'category': 'nature', 'suitable_season': 'Summer, Autumn',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Logoisk_forest.jpg/640px-Logoisk_forest.jpg',
      'avg_rating': 3.9, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Svislach Hills', 'name_en': 'Svislach Hills',
@@ -658,7 +658,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Rolling hills north of Minsk — scenic hiking and beautiful autumn foliage.',
      'location': 'Smolevichi District, Minsk Oblast', 'city': 'Smolevichi', 'region': 'Minsk Oblast',
      'latitude': 54.15, 'longitude': 26.8333, 'category': 'nature', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Svisloch_hills.jpg/640px-Svisloch_hills.jpg',
      'avg_rating': 3.9, 'is_featured': False, 'is_verified': True},
 
     # ══════════════════════════════════════════════════════════
@@ -669,7 +669,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Minsk main railway hub — connections across Belarus and international routes.',
      'location': 'Minsk, Belarus', 'city': 'Minsk', 'region': 'Minsk',
      'latitude': 53.8858, 'longitude': 27.5472, 'category': 'architecture', 'suitable_season': 'All seasons',
-     'opening_hours': 'Open 24 hours', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open 24 hours', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Minsk_railway_station.jpg/640px-Minsk_railway_station.jpg',
      'avg_rating': 4.0, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Minsk Drama Theater', 'name_en': 'Minsk Drama Theater',
@@ -677,7 +677,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'National theatre founded in 1888 — eclectic architecture, classic and contemporary drama.',
      'location': 'Minsk, Belarus', 'city': 'Minsk', 'region': 'Minsk',
      'latitude': 53.9111, 'longitude': 27.5656, 'category': 'architecture', 'suitable_season': 'All seasons',
-     'opening_hours': 'By performance', 'ticket_price': 15.00, 'image_url': '',
+     'opening_hours': 'By performance', 'ticket_price': 15.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Minsk_drama_theatre.jpg/640px-Minsk_drama_theatre.jpg',
      'avg_rating': 4.2, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Motherland Monument', 'name_en': 'Motherland Monument',
@@ -685,7 +685,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Massive WWII monument — sweeping views of Minsk from the top platform.',
      'location': 'Minsk, Belarus', 'city': 'Minsk', 'region': 'Minsk',
      'latitude': 53.9083, 'longitude': 27.5725, 'category': 'architecture', 'suitable_season': 'All seasons',
-     'opening_hours': '10:00 - 18:00', 'ticket_price': 3.00, 'image_url': '',
+     'opening_hours': '10:00 - 18:00', 'ticket_price': 3.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Minsk_Motherland_Monument.jpg/640px-Minsk_Motherland_Monument.jpg',
      'avg_rating': 4.3, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Minsk Sports Complex (Minsk Arena)', 'name_en': 'Minsk Arena',
@@ -693,7 +693,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Modern multi-sport complex — 15,000-seat arena, velodrome, swimming pool.',
      'location': 'Minsk, Belarus', 'city': 'Minsk', 'region': 'Minsk',
      'latitude': 53.9367, 'longitude': 27.4817, 'category': 'architecture', 'suitable_season': 'All seasons',
-     'opening_hours': '08:00 - 22:00', 'ticket_price': 10.00, 'image_url': '',
+     'opening_hours': '08:00 - 22:00', 'ticket_price': 10.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Minsk_Arena.jpg/640px-Minsk_Arena.jpg',
      'avg_rating': 4.3, 'is_featured': False, 'is_verified': True},
 
     # ══════════════════════════════════════════════════════════
@@ -704,7 +704,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': '18th-century fortress on the Berezina River — played a role in the Napoleonic Wars.',
      'location': 'Babruysk, Mogilev Oblast', 'city': 'Babruysk', 'region': 'Mogilev Oblast',
      'latitude': 53.1333, 'longitude': 29.25, 'category': 'castle', 'suitable_season': 'All seasons',
-     'opening_hours': 'External viewing only', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'External viewing only', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Babruysk_fortress.jpg/640px-Babruysk_fortress.jpg',
      'avg_rating': 3.8, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Bruzdzitsy Ancient Settlement', 'name_en': 'Bruzdzitsy Ancient Settlement',
@@ -712,7 +712,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Iron Age archaeological site — 6th-4th century BCE ancient settlement.',
      'location': 'Bruzdzitsy, Grodno Oblast', 'city': 'Bruzdzitsy', 'region': 'Grodno Oblast',
      'latitude': 53.75, 'longitude': 24.5, 'category': 'memorial', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Bruzdzitsy_settlement.jpg/640px-Bruzdzitsy_settlement.jpg',
      'avg_rating': 3.9, 'is_featured': False, 'is_verified': True},
 
     # ══════════════════════════════════════════════════════════
@@ -723,7 +723,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': '16th-century fortified church — defensive architecture of the Polish-Lithuanian Commonwealth.',
      'location': 'Muravanka, Pruzhany District, Brest Oblast', 'city': 'Muravanka', 'region': 'Brest Oblast',
      'latitude': 52.45, 'longitude': 24.3, 'category': 'church', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': 'By arrangement', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'By arrangement', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Muravanka_church_Belarus.jpg/640px-Muravanka_church_Belarus.jpg',
      'avg_rating': 4.0, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Kasianikitsy Church', 'name_en': 'Kasianikitsy Church',
@@ -731,7 +731,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': '16th-century Orthodox church — unique equilateral cross-shaped interior design.',
      'location': 'Kasianikitsy, Vitebsk Oblast', 'city': 'Kasianikitsy', 'region': 'Vitebsk Oblast',
      'latitude': 55.65, 'longitude': 29.05, 'category': 'church', 'suitable_season': 'Spring, Summer, Autumn',
-     'opening_hours': 'By arrangement', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': 'By arrangement', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Kasyanikitsy_church.jpg/640px-Kasyanikitsy_church.jpg',
      'avg_rating': 4.1, 'is_featured': False, 'is_verified': True},
 
     {'name': 'Holy Trinity Cathedral, Vitebsk', 'name_en': 'Holy Trinity Cathedral, Vitebsk',
@@ -739,7 +739,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Oldest stone building in Vitebsk — Russian Revival Orthodox cathedral from 1750-1772.',
      'location': 'Vitebsk, Belarus', 'city': 'Vitebsk', 'region': 'Vitebsk Oblast',
      'latitude': 55.1917, 'longitude': 30.2033, 'category': 'church', 'suitable_season': 'All seasons',
-     'opening_hours': '07:00 - 19:00', 'ticket_price': 0.00, 'image_url': '',
+     'opening_hours': '07:00 - 19:00', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Vitebsk_Trinity_Cathedral.jpg/640px-Vitebsk_Trinity_Cathedral.jpg',
      'avg_rating': 4.0, 'is_featured': False, 'is_verified': True},
 
     # ══════════════════════════════════════════════════════════
@@ -750,7 +750,7 @@ BELARUS_ATTRACTIONS = [
      'short_desc': 'Residence of Slavic Grandfather Frost — 150,000 visitors annually, fairy-tale wood carvings.',
      'location': 'Kamieniuki, Brest Oblast', 'city': 'Kamieniuki', 'region': 'Brest Oblast',
      'latitude': 52.5833, 'longitude': 23.8667, 'category': 'architecture', 'suitable_season': 'All seasons (best winter)',
-     'opening_hours': '09:00 - 17:00', 'ticket_price': 5.00, 'image_url': '',
+     'opening_hours': '09:00 - 17:00', 'ticket_price': 5.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Ded_Moroz_residence_Belarus.jpg/640px-Ded_Moroz_residence_Belarus.jpg',
      'avg_rating': 4.3, 'is_featured': False, 'is_verified': True},
 ]
 
@@ -906,6 +906,76 @@ def init_db():
                  'content': 'Belovezhskaya Pushcha is one of those places that reminds you of how magnificent untouched nature can be. As the last primeval forest in Europe, it offers a window into what the continent looked like before human civilization reshaped it.\n\nThe main attraction is the European bison (wisent). These magnificent animals roam freely in the park, and with a bit of patience you can observe them from safe viewing platforms. The park is home to over 600 bison.\n\nWhat to See: Start at the Nature Museum, then take the forest train to the bison feeding areas. The ancient oak trees — some over 600 years old — are equally impressive. Don\'t miss the Tsars Oak.\n\nPractical Tips: Wear comfortable walking shoes. The forest can be muddy. Bring binoculars for bird watching — 253 species live here!',
                  'cover_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/BelarusBNP09.JPG/400px-BelarusBNP09.JPG',
                  'tags_json': ['Nature', 'UNESCO World Heritage', 'Family Friendly', 'Photography'], 'is_featured': True, 'is_published': True, 'view_count': 245, 'like_count': 38},
+
+                {'user_id': 1, 'attraction_id': 2,
+                 'title': 'Nesvizh Castle: Walking Through the Radziwill Legacy',
+                 'summary': 'A detailed itinerary for exploring the most beautiful palace-park ensemble in Belarus.',
+                 'content': 'Nesvizh Castle was the seat of the powerful Radziwill family for more than four centuries. Today it stands as a UNESCO World Heritage Site and is widely considered the most beautiful palace complex in Belarus.\n\nThe Tour: Begin at the Corpus Christi Church with its famous family crypt, then walk through the manicured park to the main palace. Inside, do not miss the gilded ballroom, the portrait gallery, and the chapel.\n\nGetting There: Nesvizh is about 150km southwest of Minsk. Regular buses and marshrutkas run from Minsk Central Bus Station. The journey takes roughly 2.5 hours.\n\nWhen to Visit: Late spring and early autumn are perfect. The park is in full bloom from May to June, and autumn colors peak in October.\n\nFamily Tip: Children love the knight-themed photo zones near the courtyard and the open park for picnics.',
+                 'cover_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/%D0%9D%D1%8F%D1%81%D0%B2%D1%96%D0%B6_%D0%B7%D0%B0%D0%BC%D0%B0%D0%BA.jpg/400px-%D0%9D%D1%8F%D1%81%D0%B2%D1%96%D0%B6_%D0%B7%D0%B0%D0%BC%D0%B0%D0%BA.jpg',
+                 'tags_json': ['UNESCO World Heritage', 'History', 'Architecture'], 'is_featured': True, 'is_published': True, 'view_count': 198, 'like_count': 27},
+
+                {'user_id': 2, 'attraction_id': 11,
+                 'title': 'Brest Fortress: A Pilgrimage of Memory',
+                 'summary': 'Why every visitor to Belarus should spend a full day at the symbol of Soviet wartime endurance.',
+                 'content': 'Brest Fortress is more than a historical monument. It is a place of pilgrimage. On 22 June 1941, this 19th-century citadel became one of the first targets of Operation Barbarossa. The garrison held out for weeks against overwhelming force.\n\nThe Centrepiece: The colossal "Courage" sculpture — a concrete head emerging from a rock face — is one of the largest portrait sculptures in the world. Stand at its base and look up. It is overwhelming.\n\nMuseum Visit: The Defence of Brest Fortress Museum holds personal belongings, recovered weapons, photographs, and documents that bring the story to life. Plan at least two hours.\n\nThe Surrounding Complex: Walk the perimeter walls, the eternal flame courtyard, and the obelisk. Audio guides are available in English, Russian, and Belarusian.',
+                 'cover_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Brest_fortress_10.jpg/400px-Brest_fortress_10.jpg',
+                 'tags_json': ['History', 'Memorial', 'WWII'], 'is_featured': True, 'is_published': True, 'view_count': 410, 'like_count': 56},
+
+                {'user_id': 1, 'attraction_id': 28,
+                 'title': 'Minsk City Guide: 72 Hours in the Belarusian Capital',
+                 'summary': 'A long-weekend itinerary covering architecture, museums, food, and nightlife in Minsk.',
+                 'content': 'Minsk is one of the cleanest and most underrated capitals in Eastern Europe. Rebuilt almost entirely after WWII, the city blends Soviet monumental architecture with modern glass towers and an extensive green park system.\n\nDay 1 — Independence Avenue: Walk the 15km main boulevard from Victory Square south, stopping at Independence Square, the Government House, the GUM department store, and the Holy Trinity Cathedral in the Upper Town.\n\nDay 2 — Museums: Spend the morning at the Great Patriotic War Museum with its 8,000 artefacts and rooftop observation deck. In the afternoon, visit the National Art Museum — over 30,000 works spanning 900 years.\n\nDay 3 — Nature: Visit the National Library of Belarus with its iconic diamond shape and panoramic rooftop. Stroll the Svislach River embankment and end at Gorky Park.\n\nFood: Try draniki (potato pancakes), machanka (pork stew), and Belarusian kvass.',
+                 'cover_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/National_Library_of_Belarus.jpg/400px-National_Library_of_Belarus.jpg',
+                 'tags_json': ['City Guide', 'Architecture', 'Urban'], 'is_featured': True, 'is_published': True, 'view_count': 522, 'like_count': 71},
+
+                {'user_id': 1, 'attraction_id': 25,
+                 'title': 'Grodno Old Town: A Stroll Through Eight Centuries',
+                 'summary': 'Why Grodno is the best-preserved historic city in Belarus.',
+                 'content': 'Grodno is the rare Belarusian city that survived World War II largely intact. Its old town preserves buildings from the 13th to 19th centuries along cobblestone streets that follow their original medieval layout.\n\nKey Sights: The New Town area with Polish-era merchant houses, the former Royal Castle site, the old market square, and the Old Town walking streets. The SS. Boris and Gleb Church (Kalozha) — one of the oldest surviving structures in Belarus — is just a few minutes walk.\n\nDay Trips from Grodno: Holy Trinity Church in Gierviaty ("Belarusian Notre-Dame"), Augustow Canal, and Lida Castle are all within an hour.\n\nWhen to Visit: Summer evenings are magical — outdoor cafes along the Neman River fill with locals and visitors.',
+                 'cover_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Grodno_Old_Town_Sovetskaya.jpg/640px-Grodno_Old_Town_Sovetskaya.jpg',
+                 'tags_json': ['City Guide', 'Architecture', 'History'], 'is_featured': False, 'is_published': True, 'view_count': 167, 'like_count': 23},
+
+                {'user_id': 2, 'attraction_id': 24,
+                 'title': 'Polotsk: The Cradle of Belarusian Christianity',
+                 'summary': 'A walking guide to Belarus oldest city, founded in 862 AD.',
+                 'content': 'Polotsk is one of the oldest cities in the entire former Kievan Rus. Founded in 862 AD, it served as the capital of an independent principality and is the birthplace of Belarusian Christianity.\n\nThe Saint Sophia Cathedral: Originally built in the 11th century, rebuilt in Baroque style after the Great Northern War. The interior features an impressive iconostasis and acoustically perfect nave for choral performances.\n\nThe Bogoyavlensky Monastery and the Copernicus House: The latter commemorates Copernicus maternal family connection to Polotsk.\n\nThe Western Dvina River Embankment: A scenic walk that ties all the historic sights together.',
+                 'cover_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Polatsk_lower_town.jpg/640px-Polatsk_lower_town.jpg',
+                 'tags_json': ['History', 'Architecture', 'City Guide'], 'is_featured': False, 'is_published': True, 'view_count': 134, 'like_count': 19},
+
+                {'user_id': 1, 'attraction_id': 23,
+                 'title': 'Vitebsk for Art Lovers: The Chagall Trail',
+                 'summary': 'A self-guided walking tour of Marc Chagall birthplace and his artistic legacy.',
+                 'content': 'Vitebsk is the hometown of Marc Chagall (1887-1985), one of the 20th century most influential artists. Even if you only have a day, you can follow his footsteps through the city.\n\nThe Marc Chagall Museum: Housed in the building where Chagall lived and worked during his years as art director of the Vitebsk Art School (1919-1920). The collection includes paintings, graphic works, and personal belongings.\n\nThe Vitebsk Regional Museum: A broader history of the region with a notable Chagall-period section.\n\nThe Summer Festival: Every July the city hosts the Slavianski Bazaar international arts festival, drawing performers from across the Slavic world.',
+                 'cover_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Vitebsk_Chagall_Museum.jpg/640px-Vitebsk_Chagall_Museum.jpg',
+                 'tags_json': ['Art', 'Culture', 'Museums'], 'is_featured': False, 'is_published': True, 'view_count': 121, 'like_count': 17},
+
+                {'user_id': 1, 'attraction_id': 22,
+                 'title': 'Lake Naroch: A Belarusian Seaside Escape',
+                 'summary': 'How to plan a summer holiday at the largest lake in Belarus.',
+                 'content': 'Lake Naroch is the largest lake in Belarus at 79.6 square kilometres. With its sandy beaches, clear water, and surrounding pine forests, it is often called the Belarusian seaside.\n\nWhere to Stay: The town of Naroch has sanatoriums and guesthouses catering to families. Book in advance for July and August.\n\nWhat to Do: Swimming, sunbathing on sandy beaches, kayaking on the lake, cycling along forest paths. Several smaller lakes nearby are worth a half-day visit.\n\nBest Time: June to early September. July water temperatures are warmest.',
+                 'cover_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/NarachLake.jpg/400px-NarachLake.jpg',
+                 'tags_json': ['Nature', 'Lakes', 'Family Friendly'], 'is_featured': False, 'is_published': True, 'view_count': 178, 'like_count': 26},
+
+                {'user_id': 2, 'attraction_id': 21,
+                 'title': 'Braslau Lakes: Kayaking the Belarusian Lakeland',
+                 'summary': 'A three-day paddling itinerary through the most scenic lake district in Belarus.',
+                 'content': 'The Braslau Lakes National Park in northern Vitebsk Oblast encompasses over 30 glacial lakes connected by rivers. The rolling hills, pine forests, and crystal-clear water make it the most beautiful lake district in the country.\n\nSuggested Route (3 days, 50km): Day 1 — Start at Lake Drysvyaty and paddle south. Day 2 — Cross to Lake Snudy via a short portage. Day 3 — Finish at Lake Strusto.\n\nGear: Rent kayaks and dry bags at the park visitor centre. Bring layers — even in summer evenings can be cool.\n\nWildlife: Watch for white-tailed eagles, kingfishers, and — if lucky — beavers along the shoreline.',
+                 'cover_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Braslaw_lakes.jpg/400px-Braslaw_lakes.jpg',
+                 'tags_json': ['Nature', 'Lakes', 'Adventure'], 'is_featured': True, 'is_published': True, 'view_count': 211, 'like_count': 31},
+
+                {'user_id': 1, 'attraction_id': 47,
+                 'title': 'Rumyantsev-Paskevich Palace in Gomel: A Day Trip from Minsk',
+                 'summary': 'A complete visit guide to the neoclassical palace featured on the 20-ruble banknote.',
+                 'content': 'Gomel Palace is one of the most beautiful architectural monuments in Belarus. Featured on the 20-ruble banknote, it stretches 800 metres along the Sozh River.\n\nThe Main Building: Housed in the neoclassical palace of the Rumyantsev and Paskevich families. Inside, the decorative arts collection, weaponry, and portrait gallery are highlights.\n\nThe Park: The ancient park contains the Chapel of St. Nicholas, a watchtower, the winter garden, and riverside walkways.\n\nGetting There: Gomel is about 300km southeast of Minsk. The high-speed train takes 3 hours. The palace is a 15-minute walk from Gomel railway station.',
+                 'cover_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Rumyantsev_Paskevich_Palace_Gomel.jpg/640px-Rumyantsev_Paskevich_Palace_Gomel.jpg',
+                 'tags_json': ['Architecture', 'History', 'Museums'], 'is_featured': False, 'is_published': True, 'view_count': 156, 'like_count': 22},
+
+                {'user_id': 1, 'attraction_id': 16,
+                 'title': 'Belarusian Cuisine: A Foodie Introduction',
+                 'summary': 'The ten dishes every visitor to Belarus must try at least once.',
+                 'content': 'Belarusian cuisine is hearty, rustic, and built around potatoes, pork, mushrooms, and dairy. If you only have a week, here are the dishes not to miss.\n\n1. Draniki: Shredded potato pancakes, pan-fried until golden and served with sour cream or mushroom sauce. The national dish.\n\n2. Machanka: A pork stew with sausage and onions served over draniki or pancakes.\n\n3. Borscht: The classic beet soup, often served with a meat-stuffed pasty called vushanka.\n\n4. Kolduny: Potato dumplings stuffed with minced meat.\n\n5. Babka: A potato-and-meat casserole baked in the oven.\n\n6. Vereshchaka: A sweet-and-sour pork dish served at Christmas.\n\n7. Smetannik: A layered honey cake with sour cream frosting.\n\n8. Kvass: A fermented bread drink, perfect on a hot day.\n\n9. Medovukha: A traditional honey-based alcoholic drink, lighter than mead.\n\n10. Kletsky: Cep mushroom dumplings.\n\nWhere to Try: Traditional restaurants in Minsk include Grablyn Kletz, Vasilki, and the Lidskaya Kafe chain.',
+                 'cover_image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Belarus_landscape.jpg/640px-Belarus_landscape.jpg',
+                 'tags_json': ['Food', 'Culture'], 'is_featured': False, 'is_published': True, 'view_count': 289, 'like_count': 42},
             ]
             for a in articles_data:
                 db.session.add(Article(**a))

@@ -11,10 +11,18 @@
         <router-link to="/qa">Q&amp;A</router-link>
         <router-link to="/recommendations" v-if="isLoggedIn">{{ $t('nav.recommendations') }}</router-link>
         <router-link to="/profile" v-if="isLoggedIn">{{ $t('nav.profile') }}</router-link>
-        <router-link to="/admin" v-if="currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator')">Admin</router-link>
-        <router-link to="/login" v-if="!isLoggedIn">{{ $t('nav.login') }}</router-link>
-        <router-link to="/register" v-if="!isLoggedIn">{{ $t('nav.register') }}</router-link>
-        <button @click="logout" v-if="isLoggedIn" class="btn-link">{{ $t('nav.logout') }}</button>
+        <router-link to="/admin" v-if="isAdmin">{{ $t('nav.admin') }}</router-link>
+
+        <template v-if="!isLoggedIn">
+          <router-link to="/login">{{ $t('nav.login') }}</router-link>
+          <router-link to="/register">{{ $t('nav.register') }}</router-link>
+        </template>
+
+        <div v-else class="user-menu" @click="goProfile">
+          <div class="avatar" :style="avatarStyle">{{ avatarLetter }}</div>
+          <span class="username">{{ displayName }}</span>
+        </div>
+        <button @click="logout" v-if="isLoggedIn" class="btn-link logout-btn">{{ $t('nav.logout') }}</button>
       </div>
     </nav>
     <main class="main-content">
@@ -24,12 +32,71 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
-const isLoggedIn = computed(() => !!localStorage.getItem('token'))
-const currentUser = computed(() => JSON.parse(localStorage.getItem('user') || 'null'))
+const route = useRoute()
+
+// Re-evaluate the localStorage-backed state on mount and on every route change
+// so the navbar reflects a fresh login/logout even though localStorage itself
+// is not reactive.
+const _bump = ref(0)
+const isLoggedIn = computed(() => {
+  // touch _bump so the computed re-runs when it changes
+  void _bump.value
+  return !!localStorage.getItem('token')
+})
+const currentUser = computed(() => {
+  void _bump.value
+  try {
+    return JSON.parse(localStorage.getItem('user') || 'null')
+  } catch (e) {
+    return null
+  }
+})
+
+onMounted(() => {
+  window.addEventListener('storage', () => { _bump.value++ })
+})
+// Bump on every route change so logins/logouts triggered by sibling components
+// are picked up immediately.
+import { watch } from 'vue'
+watch(() => route.fullPath, () => { _bump.value++ })
+
+const isAdmin = computed(() => {
+  const u = currentUser.value
+  return u && (u.role === 'admin' || u.role === 'moderator')
+})
+
+const displayName = computed(() => {
+  const u = currentUser.value
+  if (!u) return ''
+  return u.username || u.name || u.email || 'User'
+})
+
+const avatarLetter = computed(() => {
+  const name = displayName.value || '?'
+  return name.trim().charAt(0).toUpperCase()
+})
+
+const avatarColor = computed(() => {
+  const name = displayName.value || '?'
+  let hash = 0
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  const hue = Math.abs(hash) % 360
+  return `hsl(${hue}, 55%, 45%)`
+})
+
+const avatarStyle = computed(() => ({
+  backgroundColor: avatarColor.value
+}))
+
+const goProfile = () => {
+  router.push('/profile')
+}
 
 const logout = () => {
   localStorage.removeItem('token')
@@ -102,6 +169,45 @@ body {
 
 .btn-link:hover {
   color: white;
+}
+
+.logout-btn {
+  font-size: 0.85rem;
+  padding: 0;
+}
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 20px;
+  transition: background-color 0.2s;
+}
+
+.user-menu:hover {
+  background-color: rgba(255,255,255,0.1);
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.username {
+  color: rgba(255,255,255,0.95);
+  font-size: 0.95rem;
+  font-weight: 500;
 }
 
 .main-content {

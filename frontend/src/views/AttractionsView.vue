@@ -9,6 +9,10 @@
         @input="debouncedFetch"
         class="search-input"
       />
+      <select v-model="category" @change="fetchAttractions" class="filter-select">
+        <option value="">{{ $t('attractions.allCategories') }}</option>
+        <option v-for="c in categories" :key="c" :value="c">{{ c }}</option>
+      </select>
       <select v-model="sortBy" @change="fetchAttractions" class="sort-select">
         <option value="created_at">{{ $t('attractions.sortNew') }}</option>
         <option value="rating">{{ $t('attractions.sortRating') }}</option>
@@ -42,9 +46,11 @@ import AttractionCard from '../components/AttractionCard.vue'
 const attractions = ref([])
 const loading = ref(false)
 const search = ref('')
+const category = ref('')
 const sortBy = ref('created_at')
 const page = ref(1)
 const totalPages = ref(1)
+const categories = ref([])
 
 let debounceTimer = null
 const debouncedFetch = () => {
@@ -60,6 +66,7 @@ const fetchAttractions = async () => {
   try {
     const res = await attractionsAPI.list({
       search: search.value,
+      category: category.value,
       sort: sortBy.value,
       page: page.value,
       per_page: 9
@@ -73,7 +80,19 @@ const fetchAttractions = async () => {
   }
 }
 
-onMounted(fetchAttractions)
+const loadCategories = async () => {
+  try {
+    const res = await attractionsAPI.categories()
+    categories.value = res.data.categories || []
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+onMounted(() => {
+  loadCategories()
+  fetchAttractions()
+})
 </script>
 
 <style scoped>
@@ -81,15 +100,18 @@ onMounted(fetchAttractions)
   display: flex;
   gap: 1rem;
   margin-bottom: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .search-input {
   flex: 1;
+  min-width: 240px;
   max-width: 400px;
 }
 
+.filter-select,
 .sort-select {
-  width: 180px;
+  width: 200px;
 }
 
 .attractions-grid {

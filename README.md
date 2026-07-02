@@ -48,11 +48,36 @@ npm run dev        # Start dev server on http://localhost:3000
 
 ## API Endpoints
 
-- `POST /api/auth/register` - Register
-- `POST /api/auth/login` - Login
-- `GET /api/attractions` - List attractions
-- `GET /api/attractions/:id` - Attraction detail
-- `POST /api/attractions` - Create attraction (admin)
-- `GET/POST /api/reviews` - List/create reviews
-- `GET /api/recommendations` - Get personalized recommendations
-- `POST /api/recommendations/predict-rating` - Predict rating
+The complete REST surface (10 blueprints, 40+ endpoints) is documented in the project report (`Report_BelarusTourism.docx`, Appendix B).
+
+## Capturing Report Screenshots
+
+The internship report expects screenshots of every page. Use the bundled Playwright script to capture them all in one go:
+
+```bash
+pip install playwright
+playwright install chromium
+# In one terminal: cd backend && python app.py
+# In another:       python take_screenshots.py
+```
+
+The script writes 12 PNGs into `screenshots/` covering the home page, attractions list (with category dropdown), attraction detail, login, the logged-in navigation bar showing the username and avatar, recommendations, articles list/detail/write, Q&A, profile, and the admin dashboard.
+
+## Screenshot Checklist (manual)
+
+If you prefer to capture screenshots by hand, this is the minimum list required for the report:
+
+1. Home page (hero + featured attractions + recent reviews).
+2. Attractions listing with the **Category** dropdown open.
+3. Attraction detail page with the AI sentiment badge and the predicted-rating widget.
+4. Login page.
+5. Home page **after** a successful login, showing the username and avatar in the navigation bar.
+6. Recommendations page with personalised results.
+7. Articles list.
+8. Article detail.
+9. Article-write form.
+10. Q&A list and a single Q&A thread.
+11. Profile page (avatar, my reviews, my ratings tabs).
+12. Admin dashboard with platform statistics and moderation controls.
+
+Always capture in English locale (set the browser language to English).

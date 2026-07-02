@@ -65,7 +65,8 @@ def login():
             'username': user.username,
             'email': user.email,
             'role': user.role,
-            'nickname': user.nickname
+            'nickname': user.nickname,
+            'avatar_url': user.avatar_url
         }
     }), 200
 

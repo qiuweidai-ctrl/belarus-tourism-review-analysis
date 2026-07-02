@@ -9,7 +9,7 @@
           {{ '★'.repeat(Math.round(attraction.avg_rating)) }}{{ '☆'.repeat(5 - Math.round(attraction.avg_rating)) }}
           {{ attraction.avg_rating.toFixed(1) }}
         </span>
-        <span class="reviews-count">{{ attraction.review_count }} {{ $t('attractions.reviews') }}</span>
+        <span class="reviews-count">{{ attraction.total_reviews }} {{ $t('attractions.reviews') }}</span>
       </div>
       <p class="card-desc">{{ shortDesc }}</p>
     </div>
