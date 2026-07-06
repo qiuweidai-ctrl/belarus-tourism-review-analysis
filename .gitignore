@@ -1,0 +1,75 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+dist/
+*.egg-info/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Database
+instance/*.db
+*.sqlite3
+
+# Node modules (frontend)
+frontend/node_modules/
+
+# Frontend build artefacts served by Flask
+# (kept in repo so a fresh clone can run the app without re-building)
+
+# Flask instance folder (SQLite dev DB)
+backend/instance/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build outputs
+*.pyc
+*.pyo
+
+# Confidential
+credentials.json
+secrets.json
+
+# Temporary helper scripts and build artifacts (not part of the running app)
+_*.py
+_*.txt
+_*.json
+boot.out
+backend/boot.out
+frontend/boot.out
+backend/static/assets/
+
+# Local user images (used only during local development)
+user_img*.png
+
+# Document/report generation helpers (one-off scripts, not part of the running app)
+cleanup_docx_images.py
+insert_screenshots.py
+layout_figure_2_3.py
+take_screenshots.py
+screenshots/
