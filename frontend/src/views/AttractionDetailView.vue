@@ -53,6 +53,11 @@
         </div>
         <p class="description">{{ attraction.description }}</p>
 
+        <div v-if="aiSummary" class="ai-summary card">
+          <h3>🤖 AI Generated Summary</h3>
+          <p>{{ aiSummary }}</p>
+        </div>
+
         <div class="sentiment-summary" v-if="attraction.sentiment_score !== 0">
           <h3>{{ $t('attractionDetail.sentiment') }}</h3>
           <div class="sentiment-bar">
@@ -77,11 +82,60 @@
       </div>
     </div>
 
+    <div v-if="similarAttractions.length > 0" class="similar-attractions">
+      <h2>✨ Similar Attractions (TF-IDF)</h2>
+      <div class="similar-grid">
+        <div
+          v-for="item in similarAttractions"
+          :key="item.attraction_id"
+          class="similar-card card"
+          @click="goToAttraction(item.attraction_id)"
+        >
+          <div v-if="item.image_url" class="similar-img" :style="{ backgroundImage: `url(${item.image_url})` }"></div>
+          <div v-else class="similar-img placeholder"></div>
+          <div class="similar-info">
+            <h4>{{ item.name }}</h4>
+            <p class="similar-location">{{ item.location }}</p>
+            <div class="similar-meta">
+              <span class="rating">★ {{ item.avg_rating }}</span>
+              <span class="similarity-badge">{{ item.similarity }}% match</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="topQualityReviews.length > 0" class="top-reviews-section">
+      <h2>🏆 Top Quality Reviews (TextRank)</h2>
+      <div class="reviews-list">
+        <div v-for="item in topQualityReviews" :key="item.review_id" class="review-card card highlight">
+          <div class="review-quality-badge">
+            <span class="quality-score" :class="'grade-' + item.quality.grade">{{ item.quality.grade }}</span>
+            <span class="quality-label">{{ item.quality.label }}</span>
+            <span class="quality-number">{{ item.quality.quality_score }} points</span>
+          </div>
+          <div class="review-top">
+            <strong>{{ item.review.author }}</strong>
+            <span class="stars">{{ '★'.repeat(item.review.rating) }}{{ '☆'.repeat(5 - item.review.rating) }}</span>
+          </div>
+          <p>{{ item.review.content }}</p>
+          <div class="review-meta">
+            <span class="helpful-count">👍 {{ item.review.helpful_count }} helpful</span>
+            <span class="review-date">{{ formatDate(item.review.created_at) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="detail-section">
       <h2>{{ $t('attractionDetail.reviews') }}</h2>
 
       <div v-if="isLoggedIn" class="review-form card">
         <h3>{{ $t('attractionDetail.writeReview') }}</h3>
+        <div v-if="duplicateWarning" class="duplicate-warning">
+          <span class="warning-icon">⚠️</span>
+          <span>{{ duplicateWarning }}</span>
+        </div>
         <div class="rating-input">
           <label>{{ $t('attractionDetail.rating') }}:</label>
           <div class="stars-input">
@@ -97,6 +151,7 @@
           v-model="newReview.content"
           :placeholder="$t('attractionDetail.contentPlaceholder')"
           rows="4"
+          @blur="checkDuplicate"
         ></textarea>
         <button @click="submitReview" :disabled="!newReview.content || submitting" class="btn-primary">
           {{ submitting ? $t('common.loading') : $t('attractionDetail.submit') }}
@@ -136,7 +191,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { attractionsAPI, reviewsAPI, recommendationsAPI, wishlistAPI } from '@/api/client.js'
+import { attractionsAPI, reviewsAPI, recommendationsAPI, wishlistAPI, algoAPI } from '@/api/client.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -145,6 +200,11 @@ const reviews = ref([])
 const loading = ref(true)
 const submitting = ref(false)
 const isLoggedIn = ref(!!localStorage.getItem('token'))
+const similarAttractions = ref([])
+const topQualityReviews = ref([])
+const aiSummary = ref('')
+const duplicateWarning = ref('')
+let duplicateCheckTimer = null
 
 function goBack() {
   const ref = router.getReferrer(route.fullPath)
@@ -164,22 +224,15 @@ const newReview = ref({ content: '', rating: 5 })
 const predictedRating = ref(null)
 const predictReason = ref('')
 const wishlisted = ref(false)
-
-// Image upload (creator / admin only) ------------------------------------
 const imageFileInput = ref(null)
 const imageUploading = ref(false)
 const imageUploadError = ref('')
 const currentUser = ref(null)
 const currentUserRole = ref('')
-
-// Cache-bust the image so the browser doesn't reuse a stale cached file
-// when image_url is replaced with one pointing to the same path prefix.
 const imageCacheBust = ref(0)
 
 const ALLOWED_IMG_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp']
 const MAX_IMG_SIZE = 8 * 1024 * 1024
-
-// Creator or admin can replace the main image. Public viewers cannot.
 const canEditImage = computed(() => {
   if (!isLoggedIn.value || !attraction.value || !currentUser.value) return false
   if (currentUserRole.value === 'admin') return true
@@ -213,7 +266,6 @@ function validateImageFile(f) {
 
 async function onImageFileChange(e) {
   const f = e.target.files && e.target.files[0]
-  // Always reset so picking the same file again still fires `change`.
   if (imageFileInput.value) imageFileInput.value.value = ''
   if (!f) return
   const err = validateImageFile(f)
@@ -267,7 +319,6 @@ const formatDate = (dateStr) => {
 const fetchData = async () => {
   loading.value = true
   try {
-    // Capture current user / role for the canEditImage check.
     try {
       const u = JSON.parse(localStorage.getItem('user') || 'null')
       currentUser.value = u
@@ -301,6 +352,56 @@ const fetchData = async () => {
     loading.value = false
   }
 }
+const fetchAlgoData = async () => {
+  const id = route.params.id
+  try {
+    const simRes = await algoAPI.getSimilarAttractions(id, { top_k: 4 })
+    similarAttractions.value = simRes.data.data || []
+  } catch (e) {
+    console.error('Similar attractions fetch failed', e)
+  }
+  try {
+    const qualRes = await algoAPI.getTopQualityReviews(id, { limit: 3 })
+    topQualityReviews.value = qualRes.data.data || []
+  } catch (e) {
+    console.error('Top quality reviews fetch failed', e)
+  }
+  try {
+    const sumRes = await algoAPI.getAttractionSummary(id)
+    aiSummary.value = sumRes.data.data?.summary || ''
+  } catch (e) {
+    console.error('AI summary fetch failed', e)
+  }
+}
+const checkDuplicate = async () => {
+  if (!newReview.value.content || newReview.value.content.length < 50) {
+    duplicateWarning.value = ''
+    return
+  }
+  if (duplicateCheckTimer) clearTimeout(duplicateCheckTimer)
+
+  duplicateCheckTimer = setTimeout(async () => {
+    try {
+      const res = await algoAPI.checkDuplicate({ content: newReview.value.content })
+      if (res.data.data?.is_duplicate) {
+        const maxSim = res.data.data.max_similarity
+        if (res.data.data.warning_level === 'high') {
+          duplicateWarning.value = `⚠️ Your review is ${maxSim}% similar to existing content. Please write original content.`
+        } else if (res.data.data.warning_level === 'medium') {
+          duplicateWarning.value = `⚡ Your review has ${maxSim}% similarity to existing content.`
+        }
+      } else {
+        duplicateWarning.value = ''
+      }
+    } catch (e) {
+      console.error('Duplicate check failed', e)
+    }
+  }, 1000)
+}
+
+const goToAttraction = (id) => {
+  router.push(`/attractions/${id}`)
+}
 
 const submitReview = async () => {
   submitting.value = true
@@ -312,7 +413,9 @@ const submitReview = async () => {
     })
     newReview.value.content = ''
     newReview.value.rating = 5
+    duplicateWarning.value = ''
     await fetchData()
+    await fetchAlgoData()
   } catch (e) {
     alert('Failed to submit review')
   } finally {
@@ -340,7 +443,10 @@ const toggleWishlist = async () => {
   }
 }
 
-onMounted(fetchData)
+onMounted(() => {
+  fetchData()
+  fetchAlgoData()
+})
 </script>
 
 <style scoped>
@@ -594,5 +700,126 @@ onMounted(fetchData)
   .detail-header {
     grid-template-columns: 1fr;
   }
+}
+
+.ai-summary {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-left: 4px solid #6c5ce7;
+  margin-bottom: 1rem;
+}
+.ai-summary h3 {
+  font-size: 0.95rem;
+  color: #6c5ce7;
+  margin-bottom: 0.5rem;
+}
+.ai-summary p {
+  color: #495057;
+  line-height: 1.7;
+}
+
+.similar-attractions, .top-reviews-section {
+  margin-bottom: 2rem;
+}
+.similar-attractions h2, .top-reviews-section h2 {
+  color: #1a5e63;
+  margin-bottom: 1rem;
+}
+.similar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+.similar-card {
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  overflow: hidden;
+  padding: 0;
+}
+.similar-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+.similar-img {
+  height: 120px;
+  background-size: cover;
+  background-position: center;
+}
+.similar-img.placeholder {
+  background: linear-gradient(135deg, #1a5e63, #2d8a8e);
+}
+.similar-info {
+  padding: 0.8rem;
+}
+.similar-info h4 {
+  margin: 0 0 0.3rem 0;
+  color: #1a5e63;
+  font-size: 0.95rem;
+}
+.similar-location {
+  color: #888;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+.similar-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.similarity-badge {
+  background: #e8f4f8;
+  color: #1a5e63;
+  padding: 0.2rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.review-card.highlight {
+  border-left: 4px solid #f5a623;
+}
+.review-quality-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.quality-score {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: white;
+}
+.quality-score.grade-A { background: #2a9d5c; }
+.quality-score.grade-B { background: #4dabf7; }
+.quality-score.grade-C { background: #f5a623; }
+.quality-score.grade-D { background: #e8590c; }
+.quality-label {
+  font-size: 0.85rem;
+  color: #666;
+}
+.quality-number {
+  margin-left: auto;
+  font-weight: bold;
+  color: #1a5e63;
+}
+
+.duplicate-warning {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  color: #856404;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+.warning-icon {
+  font-size: 1.1rem;
 }
 </style>

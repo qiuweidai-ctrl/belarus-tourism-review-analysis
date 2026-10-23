@@ -4,7 +4,6 @@
 
     <div v-if="loading" class="loading">{{ $t('common.loading') }}</div>
     <div v-else>
-      <!-- Stats Cards -->
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-number">{{ stats.user_count }}</div>
@@ -24,14 +23,12 @@
         </div>
       </div>
 
-      <!-- Tabs -->
       <div class="tabs">
         <button v-for="tab in tabs" :key="tab.key" :class="{ active: activeTab === tab.key }" @click="activeTab = tab.key; loadTab()">
           {{ tab.label }}
         </button>
       </div>
 
-      <!-- Users Tab -->
       <div v-if="activeTab === 'users'" class="tab-content">
         <div v-if="users.length === 0" class="empty">No users found.</div>
         <table v-else class="admin-table">
@@ -63,7 +60,6 @@
         </table>
       </div>
 
-      <!-- Reviews Tab -->
       <div v-if="activeTab === 'reviews'" class="tab-content">
         <div class="controls">
           <select v-model="reviewFilter" @change="loadReviews" class="sort-select">
@@ -96,7 +92,6 @@
         </table>
       </div>
 
-      <!-- Attractions Tab -->
       <div v-if="activeTab === 'attractions'" class="tab-content">
         <div v-if="attractions.length === 0" class="empty">No attractions.</div>
         <table v-else class="admin-table">
@@ -124,7 +119,6 @@
         </table>
       </div>
 
-      <!-- Login Events (audit log) -->
       <div v-if="activeTab === 'login_events'" class="tab-content">
         <div class="evt-stats" v-if="loginEventStats && Object.keys(loginEventStats).length">
           <div class="stat-chip" v-for="(c, t) in loginEventStats" :key="t">
@@ -160,13 +154,75 @@
           <button @click="evtPage++; loadLoginEvents()" :disabled="evtPage >= loginEventsPages" class="btn-secondary">Next</button>
         </div>
       </div>
+
+      <div v-if="activeTab === 'algorithms'" class="tab-content">
+        <div class="algo-section">
+          <h3>🎯 User Clustering (K-Means)</h3>
+          <div class="algo-actions">
+            <button @click="retrainClustering" class="btn-primary">🔄 Retrain Clustering Model</button>
+          </div>
+          <div v-if="clusterDistribution" class="cluster-grid">
+            <div v-for="(info, name) in clusterDistribution" :key="name" class="cluster-card card">
+              <h4>{{ name }}</h4>
+              <div class="cluster-stat">
+                <span class="stat-value">{{ info.count }}</span>
+                <span class="stat-pct">{{ info.percentage }}%</span>
+              </div>
+              <button @click="showClusterUsers(name)" class="btn-secondary-sm">View Users</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="algo-section">
+          <h3>🔍 Duplicate Review Detection (MinHash/SimHash)</h3>
+          <div class="algo-actions">
+            <button @click="findDuplicates" class="btn-secondary">🔍 Find Duplicate Pairs</button>
+            <button @click="rebuildDuplicateIndex" class="btn-secondary">🔄 Rebuild Index</button>
+          </div>
+          <div v-if="duplicatePairs.length > 0" class="duplicate-list">
+            <div v-for="pair in duplicatePairs" :key="pair.review_1.id + '-' + pair.review_2.id" class="duplicate-card card">
+              <div class="duplicate-header">
+                <span class="similarity-tag">{{ pair.similarity }}% similar</span>
+                <span class="same-author" v-if="pair.review_1.user_id === pair.review_2.user_id">Same Author!</span>
+              </div>
+              <div class="duplicate-pair">
+                <div class="review-preview">
+                  <strong>{{ pair.review_1.author }}</strong>
+                  <p>{{ pair.review_1.content_preview }}...</p>
+                  <small>{{ formatDate(pair.review_1.created_at) }}</small>
+                </div>
+                <div class="vs-divider">VS</div>
+                <div class="review-preview">
+                  <strong>{{ pair.review_2.author }}</strong>
+                  <p>{{ pair.review_2.content_preview }}...</p>
+                  <small>{{ formatDate(pair.review_2.created_at) }}</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="algo-section">
+          <h3>📈 Trending Scores</h3>
+          <div class="algo-actions">
+            <button @click="recalculateTrending" class="btn-secondary">🔄 Recalculate All Scores</button>
+          </div>
+          <div class="trending-admin-list">
+            <div v-for="item in topTrending" :key="item.attraction_id" class="trending-item card">
+              <span class="trending-rank">#{{ topTrending.indexOf(item) + 1 }}</span>
+              <span class="trending-name">{{ item.name }}</span>
+              <span class="trending-score">Score: {{ item.score }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { adminAPI } from '@/api/client.js'
+import { adminAPI, algoAPI } from '@/api/client.js'
 
 const stats = ref({})
 const users = ref([])
@@ -180,7 +236,8 @@ const tabs = [
   { key: 'users', label: 'Users' },
   { key: 'reviews', label: 'Reviews' },
   { key: 'attractions', label: 'Attractions' },
-  { key: 'login_events', label: 'Login Events' }
+  { key: 'login_events', label: 'Login Events' },
+  { key: 'algorithms', label: 'AI Algorithms' }
 ]
 
 const loginEvents = ref([])
@@ -188,6 +245,9 @@ const loginEventStats = ref({})
 const evtPage = ref(1)
 const loginEventsPages = ref(1)
 const evtTypeFilter = ref('')
+const clusterDistribution = ref(null)
+const duplicatePairs = ref([])
+const topTrending = ref([])
 
 const fetchStats = async () => {
   try {
@@ -201,6 +261,11 @@ const loadTab = async () => {
   else if (activeTab.value === 'reviews') await loadReviews()
   else if (activeTab.value === 'attractions') await loadAttractions()
   else if (activeTab.value === 'login_events') await loadLoginEvents()
+  else if (activeTab.value === 'algorithms') {
+    await loadClusterDistribution()
+    await loadTopTrending()
+    duplicatePairs.value = []
+  }
 }
 
 const loadLoginEvents = async () => {
@@ -267,6 +332,90 @@ const verifyAttraction = async (id) => {
   try { await adminAPI.verifyAttraction(id); await loadAttractions() } catch (e) { alert('Failed') }
 }
 const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
+const loadClusterDistribution = async () => {
+  try {
+    const res = await algoAPI.getClusterDistribution()
+    clusterDistribution.value = res.data.data
+  } catch (e) {
+    console.error('Cluster distribution load failed', e)
+  }
+}
+
+const retrainClustering = async () => {
+  if (!confirm('Retrain clustering model? This may take a while.')) return
+  loading.value = true
+  try {
+    const res = await algoAPI.retrainClustering()
+    alert(res.data.message || 'Clustering retrained successfully')
+    await loadClusterDistribution()
+  } catch (e) {
+    alert('Failed to retrain clustering: ' + (e.response?.data?.message || e.message))
+  } finally {
+    loading.value = false
+  }
+}
+
+const showClusterUsers = async (clusterName) => {
+  const clusterId = Object.keys(clusterDistribution.value || {}).indexOf(clusterName)
+  if (clusterId >= 0) {
+    try {
+      const res = await algoAPI.getClusterUsers(clusterId)
+      alert(`Found ${res.data.data.total} users in this cluster`)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+}
+
+const findDuplicates = async () => {
+  loading.value = true
+  try {
+    const res = await algoAPI.findDuplicatePairs({ min_similarity: 0.8, limit: 20 })
+    duplicatePairs.value = res.data.data || []
+    alert(`Found ${duplicatePairs.value.length} duplicate pairs`)
+  } catch (e) {
+    console.error('Find duplicates failed', e)
+    alert('Failed to find duplicates')
+  } finally {
+    loading.value = false
+  }
+}
+
+const rebuildDuplicateIndex = async () => {
+  if (!confirm('Rebuild duplicate detection index?')) return
+  loading.value = true
+  try {
+    const res = await algoAPI.rebuildDuplicateIndex()
+    alert(res.data.message || 'Index rebuilt')
+  } catch (e) {
+    alert('Failed to rebuild index')
+  } finally {
+    loading.value = false
+  }
+}
+
+const loadTopTrending = async () => {
+  try {
+    const res = await algoAPI.getTrending({ limit: 20 })
+    topTrending.value = res.data.data || []
+  } catch (e) {
+    console.error('Trending load failed', e)
+  }
+}
+
+const recalculateTrending = async () => {
+  if (!confirm('Recalculate trending scores for all attractions?')) return
+  loading.value = true
+  try {
+    const res = await algoAPI.recalculateTrending()
+    alert(res.data.message || 'Trending scores recalculated')
+    await loadTopTrending()
+  } catch (e) {
+    alert('Failed to recalculate trending')
+  } finally {
+    loading.value = false
+  }
+}
 
 onMounted(async () => { await fetchStats(); await loadUsers() })
 </script>
@@ -347,7 +496,6 @@ onMounted(async () => { await fetchStats(); await loadUsers() })
 
 .controls { margin-bottom: 1rem; }
 
-/* Login Events tab styles */
 .evt-stats { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
 .stat-chip { background: #f5f7fa; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.85rem; display: flex; gap: 0.4rem; align-items: center; }
 .chip-label { color: #555; text-transform: capitalize; }
@@ -388,4 +536,143 @@ onMounted(async () => { await fetchStats(); await loadUsers() })
   .event-row { grid-template-columns: 1fr; gap: 0.3rem; }
 }
 .sort-select { padding: 0.4rem 0.8rem; border: 1px solid #ddd; border-radius: 6px; }
+
+.algo-section {
+  margin-bottom: 2.5rem;
+}
+.algo-section h3 {
+  color: #1a5e63;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #eee;
+}
+.algo-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.cluster-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+.cluster-card {
+  text-align: center;
+  padding: 1.2rem;
+}
+.cluster-card h4 {
+  color: #1a5e63;
+  margin-bottom: 0.8rem;
+  font-size: 0.95rem;
+}
+.cluster-stat {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+.cluster-stat .stat-value {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #1a5e63;
+}
+.cluster-stat .stat-pct {
+  font-size: 1rem;
+  color: #888;
+  align-self: flex-end;
+}
+
+.duplicate-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.duplicate-card {
+  padding: 1rem;
+}
+.duplicate-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+.similarity-tag {
+  background: #fee;
+  color: #d44;
+  padding: 0.3rem 0.8rem;
+  border-radius: 15px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.same-author {
+  background: #fff3cd;
+  color: #856404;
+  padding: 0.3rem 0.8rem;
+  border-radius: 15px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.duplicate-pair {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 1rem;
+  align-items: center;
+}
+.vs-divider {
+  color: #888;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+.review-preview {
+  background: #f8f9fa;
+  padding: 0.8rem;
+  border-radius: 6px;
+}
+.review-preview strong {
+  color: #1a5e63;
+  font-size: 0.9rem;
+}
+.review-preview p {
+  margin: 0.5rem 0;
+  font-size: 0.85rem;
+  color: #555;
+}
+.review-preview small {
+  color: #888;
+  font-size: 0.75rem;
+}
+
+.trending-admin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.trending-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+}
+.trending-rank {
+  width: 30px;
+  height: 30px;
+  background: #1a5e63;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.85rem;
+}
+.trending-name {
+  flex: 1;
+  color: #333;
+}
+.trending-score {
+  color: #f5a623;
+  font-weight: 600;
+}
 </style>

@@ -11,7 +11,7 @@ class WishlistRepository(BaseRepository):
             user_id=user_id, attraction_id=attraction_id
         ).first()
         if existing:
-            existing.visited = not existing.visited if existing.visited else True
+            db.session.delete(existing)
             db.session.commit()
             return existing, False
         item = Wishlist(

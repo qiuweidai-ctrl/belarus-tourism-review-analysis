@@ -11,6 +11,13 @@ import ArticleDetailView from '../views/ArticleDetailView.vue'
 import ArticleWriteView from '../views/ArticleWriteView.vue'
 import QandAView from '../views/QandAView.vue'
 import AdminDashboardView from '../views/AdminDashboardView.vue'
+import InsightsView from '../views/InsightsView.vue'
+import WordCloudView from '../views/WordCloudView.vue'
+import RankingsView from '../views/RankingsView.vue'
+import MapView from '../views/MapView.vue'
+import CompareView from '../views/CompareView.vue'
+import ItineraryView from '../views/ItineraryView.vue'
+import WishlistView from '../views/WishlistView.vue'
 
 const routes = [
   { path: '/', name: 'home', component: HomeView },
@@ -24,7 +31,14 @@ const routes = [
   { path: '/articles/:id', name: 'article-detail', component: ArticleDetailView },
   { path: '/articles/write', name: 'article-write', component: ArticleWriteView },
   { path: '/qa', name: 'qa', component: QandAView },
-  { path: '/admin', name: 'admin', component: AdminDashboardView, meta: { requiresAdmin: true } }
+  { path: '/admin', name: 'admin', component: AdminDashboardView, meta: { requiresAdmin: true } },
+  { path: '/insights', name: 'insights', component: InsightsView },
+  { path: '/wordcloud', name: 'wordcloud', component: WordCloudView },
+  { path: '/rankings', name: 'rankings', component: RankingsView },
+  { path: '/map', name: 'map', component: MapView },
+  { path: '/compare', name: 'compare', component: CompareView },
+  { path: '/itinerary', name: 'itinerary', component: ItineraryView },
+  { path: '/wishlist', name: 'wishlist', component: WishlistView }
 ]
 
 const router = createRouter({
@@ -36,7 +50,6 @@ const router = createRouter({
         setTimeout(() => resolve(savedPosition), 50)
       })
     }
-    // Restore scroll position saved by the detail page's goBack -> push flow.
     const stored = sessionStorage.getItem('__scroll_' + to.fullPath)
     if (stored) {
       return new Promise((resolve) => {
@@ -46,24 +59,15 @@ const router = createRouter({
     return { top: 0 }
   }
 })
-
-// Per-route session store: records the path the user was on immediately
-// before navigating to a detail page. Used by the "Back" button on detail
-// views to return to the exact source (e.g. /attractions vs /).
 const referrerByRoute = new Map()
 
 router.beforeEach((to, from, next) => {
-  // When leaving a detail page, drop its stored referrer so it doesn't
-  // leak onto the next detail page (e.g. /attractions/3 -> /attractions/5).
   if (from && from.params && from.params.id) {
     referrerByRoute.delete(from.fullPath)
   }
-  // Persist where the user was before entering any /:id detail page.
   if (to.params && to.params.id && from && from.path && from.path !== to.path) {
     referrerByRoute.set(to.fullPath, from.fullPath)
   }
-  // Also persist current scroll position keyed by fullPath so Back navigation
-  // can restore it even when router.push() is used (which bypasses savedPosition).
   if (from && from.fullPath) {
     sessionStorage.setItem('__scroll_' + from.fullPath, String(window.scrollY))
   }

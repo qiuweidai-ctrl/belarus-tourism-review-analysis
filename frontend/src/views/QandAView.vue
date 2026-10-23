@@ -5,7 +5,7 @@
 
     <div class="controls">
       <input v-model="search" placeholder="Search questions..." @input="debouncedFetch" class="search-input" />
-      <select v-model="attractionFilter" @change="page.value = 1; syncQuery(); fetchQuestions()" class="sort-select">
+      <select v-model="attractionFilter" @change="page = 1; syncQuery(); fetchQuestions()" class="sort-select">
         <option :value="null">All Attractions</option>
         <option v-for="a in attractions" :key="a.id" :value="a.id">{{ a.name }}</option>
       </select>

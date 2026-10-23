@@ -1,6 +1,3 @@
-"""
-Attraction routes (presentation layer).
-"""
 import os
 import re
 import uuid
@@ -15,7 +12,7 @@ attraction_repo = AttractionRepository()
 user_repo = UserRepository()
 
 ALLOWED_IMG_EXT = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-IMG_MAX_BYTES = 8 * 1024 * 1024  # 8 MB
+IMG_MAX_BYTES = 8 * 1024 * 1024
 _FILENAME_SAFE_RE = re.compile(r'[^A-Za-z0-9_.-]+')
 
 
@@ -26,7 +23,6 @@ def _safe_filename(name: str) -> str:
 
 
 def _can_edit_attraction(user, attraction) -> bool:
-    """Creator or admin can edit. Moderators cannot (per product spec)."""
     if not user or not attraction:
         return False
     if user.role == 'admin':
@@ -160,7 +156,6 @@ def update_attraction(attraction_id):
 @attractions_bp.route('/<int:attraction_id>/image', methods=['POST'])
 @jwt_required()
 def upload_attraction_image(attraction_id):
-    """Upload (or replace) the main image of an attraction. Only creator/admin."""
     attraction = attraction_repo.get_by_id(attraction_id)
     if not attraction:
         return jsonify({'error': 'Attraction not found'}), 404
@@ -184,7 +179,6 @@ def upload_attraction_image(attraction_id):
             'error': f'Unsupported file type .{ext}. Allowed: {sorted(ALLOWED_IMG_EXT)}'
         }), 400
 
-    # Sniff actual content
     head = f.read(8)
     f.seek(0)
     is_png  = head.startswith(b'\x89PNG\r\n\x1a\n')
@@ -213,7 +207,6 @@ def upload_attraction_image(attraction_id):
 
     public_url = url_for('static', filename=f'images/attractions/{filename}', _external=False)
 
-    # Best-effort cleanup of the previous file if it lived in our upload folder.
     if attraction.image_url and '/static/images/attractions/' in attraction.image_url:
         old_rel = attraction.image_url.split('/static/', 1)[-1]
         old_abs = os.path.join('static', old_rel.replace('/', os.sep))

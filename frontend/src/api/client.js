@@ -1,6 +1,4 @@
 import api from './index.js'
-
-// ── Auth ──
 export const authAPI = {
   register(data) { return api.post('/auth/register', data) },
   login(data) { return api.post('/auth/login', data) },
@@ -8,8 +6,6 @@ export const authAPI = {
   logout() { return api.post('/auth/logout') },
   events(params = {}) { return api.get('/auth/events', { params }) }
 }
-
-// ── Users ──
 export const usersAPI = {
   me() { return api.get('/users/me') },
   updateMe(data) { return api.put('/users/me', data) },
@@ -22,8 +18,6 @@ export const usersAPI = {
   },
   getProfile(userId) { return api.get(`/users/${userId}`) }
 }
-
-// ── Attractions ──
 export const attractionsAPI = {
   list(params = {}) { return api.get('/attractions', { params }) },
   get(id) { return api.get(`/attractions/${id}`) },
@@ -40,8 +34,6 @@ export const attractionsAPI = {
   categories() { return api.get('/attractions/categories') },
   regions() { return api.get('/attractions/regions') }
 }
-
-// ── Reviews ──
 export const reviewsAPI = {
   list(params = {}) { return api.get('/reviews', { params }) },
   create(data) { return api.post('/reviews', data) },
@@ -49,22 +41,16 @@ export const reviewsAPI = {
   voteHelpful(id) { return api.post(`/reviews/${id}/helpful`) },
   stats(attractionId) { return api.get(`/reviews/attraction/${attractionId}/stats`) }
 }
-
-// ── Wishlist ──
 export const wishlistAPI = {
   list(params = {}) { return api.get('/wishlist', { params }) },
   toggle(data) { return api.post('/wishlist/toggle', data) },
   check(attractionId) { return api.get(`/wishlist/check/${attractionId}`) },
   remove(attractionId) { return api.delete(`/wishlist/${attractionId}`) }
 }
-
-// ── Recommendations ──
 export const recommendationsAPI = {
   get(params = {}) { return api.get('/recommendations', { params }) },
   predictRating(data) { return api.post('/recommendations/predict-rating', data) }
 }
-
-// ── Articles ──
 export const articlesAPI = {
   list(params = {}) { return api.get('/articles', { params }) },
   get(id) { return api.get(`/articles/${id}`) },
@@ -75,8 +61,6 @@ export const articlesAPI = {
   comments(id, params = {}) { return api.get(`/articles/${id}/comments`, { params }) },
   addComment(id, data) { return api.post(`/articles/${id}/comments`, data) }
 }
-
-// ── Q&A ──
 export const qaAPI = {
   listQuestions(params = {}) { return api.get('/qa/questions', { params }) },
   getQuestion(id) { return api.get(`/qa/questions/${id}`) },
@@ -87,8 +71,6 @@ export const qaAPI = {
   upvoteAnswer(id) { return api.post(`/qa/answers/${id}/upvote`) },
   acceptAnswer(id) { return api.post(`/qa/answers/${id}/accept`) }
 }
-
-// ── Tags & Dimensions ──
 export const tagsAPI = {
   list(params = {}) { return api.get('/tags', { params }) },
   create(data) { return api.post('/tags', data) },
@@ -98,8 +80,6 @@ export const tagsAPI = {
   setRatingDimensions(data) { return api.post('/tags/dimensions', data) },
   myRatingDimensions(params = {}) { return api.get('/tags/dimensions/my', { params }) }
 }
-
-// ── Admin ──
 export const adminAPI = {
   stats() { return api.get('/admin/stats') },
   users(params = {}) { return api.get('/admin/users', { params }) },
@@ -113,4 +93,63 @@ export const adminAPI = {
   toggleFeature(id) { return api.post(`/admin/attractions/${id}/feature`) },
   verifyAttraction(id) { return api.post(`/admin/attractions/${id}/verify`) },
   loginEvents(params = {}) { return api.get('/admin/login-events', { params }) }
+}
+export const analyticsAPI = {
+  overview() { return api.get('/analytics/overview') },
+  ratingDistribution() { return api.get('/analytics/rating-distribution') },
+  regionDistribution() { return api.get('/analytics/region-distribution') },
+  priceAnalysis() { return api.get('/analytics/price-analysis') },
+  reviewTrend() { return api.get('/analytics/review-trend') },
+  sentimentBreakdown() { return api.get('/analytics/sentiment-breakdown') },
+  topAttractions(params = {}) { return api.get('/analytics/top-attractions', { params }) },
+  keywords(params = {}) { return api.get('/analytics/keywords', { params }) },
+  exportCsv(dataset) { return api.get(`/analytics/export/${dataset}.csv`, { responseType: 'blob' }) }
+}
+export const algoAPI = {
+  getSimilarAttractions(attractionId, params = {}) {
+    return api.get(`/algo/similar/${attractionId}`, { params })
+  },
+  getPersonalRecommendations(params = {}) {
+    return api.get('/algo/recommendations/personal', { params })
+  },
+  getMyCluster() { return api.get('/algo/clustering/my') },
+  getClusterDistribution() { return api.get('/algo/clustering/distribution') },
+  getClusterUsers(clusterId, params = {}) {
+    return api.get(`/algo/clustering/${clusterId}/users`, { params })
+  },
+  explainCluster(clusterId) {
+    return api.get(`/algo/clustering/${clusterId}/explain`)
+  },
+  retrainClustering() { return api.post('/algo/clustering/retrain') },
+  getReviewQuality(reviewId) {
+    return api.get(`/algo/quality/${reviewId}`)
+  },
+  batchCalculateQuality(data = {}) {
+    return api.post('/algo/quality/batch', data)
+  },
+  getTopQualityReviews(attractionId, params = {}) {
+    return api.get(`/algo/quality/attraction/${attractionId}/top`, { params })
+  },
+  getTrending(params = {}) { return api.get('/algo/trending', { params }) },
+  getTrendingByCategory(category, params = {}) {
+    return api.get('/algo/trending/categories', { params: { category, ...params } })
+  },
+  getWeeklyTrend(attractionId, params = {}) {
+    return api.get(`/algo/trending/${attractionId}/weekly`, { params })
+  },
+  getCategorizedTrending(params = {}) {
+    return api.get('/algo/trending/categorize', { params })
+  },
+  recalculateTrending() { return api.post('/algo/trending/recalculate') },
+  checkDuplicate(data) { return api.post('/algo/duplicate/check', data) },
+  findDuplicatePairs(params = {}) {
+    return api.get('/algo/duplicate/pairs', { params })
+  },
+  getUserReviewPattern(userId) {
+    return api.get(`/algo/duplicate/user-pattern/${userId}`)
+  },
+  rebuildDuplicateIndex() { return api.post('/algo/duplicate/rebuild-index') },
+  getAttractionSummary(attractionId) {
+    return api.get(`/algo/summary/${attractionId}`)
+  }
 }

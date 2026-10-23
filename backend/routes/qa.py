@@ -1,6 +1,3 @@
-"""
-Q&A (Questions & Answers) routes for attractions.
-"""
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import Question, Answer, QuestionUpvote, AnswerUpvote, db
@@ -190,7 +187,6 @@ def accept_answer(answer_id):
     if question.user_id != user_id:
         return jsonify({'error': 'Only the question author can accept an answer'}), 403
 
-    # Unaccept all other answers
     Answer.query.filter_by(question_id=question.id, is_accepted=True).update({'is_accepted': False})
     answer.is_accepted = True
     question.has_accepted_answer = True

@@ -2,7 +2,6 @@
   <div>
     <h1 class="page-title">My Profile</h1>
 
-    <!-- Profile Info Card -->
     <div class="profile-header card">
       <div class="avatar-section">
         <div class="avatar-clickable-wrap" @click="openQuickAvatarPicker" :title="quickUploading ? 'Uploading...' : 'Click to upload / change avatar'">
@@ -37,7 +36,6 @@
       <button @click="showEditForm = !showEditForm" class="btn-secondary">{{ showEditForm ? 'Cancel' : 'Edit Profile' }}</button>
     </div>
 
-    <!-- Edit Form -->
     <div v-if="showEditForm" class="edit-form card">
       <h3>Edit Profile</h3>
       <div v-if="editError" class="error-msg">{{ editError }}</div>
@@ -86,14 +84,12 @@
       </button>
     </div>
 
-    <!-- Tabs -->
     <div class="tabs">
       <button v-for="tab in tabs" :key="tab.key" :class="{ active: activeTab === tab.key }" @click="activeTab = tab.key; loadTab()">
         {{ tab.label }} <span class="tab-count">{{ tabCounts[tab.key] }}</span>
       </button>
     </div>
 
-    <!-- My Reviews -->
     <div v-if="activeTab === 'reviews'" class="tab-content">
       <div v-if="reviews.length === 0" class="empty">You have not written any reviews yet.</div>
       <div v-else class="reviews-list">
@@ -113,7 +109,6 @@
       </div>
     </div>
 
-    <!-- My Wishlist -->
     <div v-if="activeTab === 'wishlist'" class="tab-content">
       <div v-if="wishlist.length === 0" class="empty">Your wishlist is empty.</div>
       <div v-else class="wishlist-grid">
@@ -131,7 +126,6 @@
       </div>
     </div>
 
-    <!-- My Articles -->
     <div v-if="activeTab === 'articles'" class="tab-content">
       <button @click="$router.push('/articles/write')" class="btn-primary" style="margin-bottom:1rem">Write New Article</button>
       <div v-if="myArticles.length === 0" class="empty">You have not written any articles yet.</div>
@@ -152,7 +146,6 @@
       </div>
     </div>
 
-    <!-- Login History (Security tab) -->
     <div v-if="activeTab === 'security'" class="tab-content">
       <h3 class="security-title">Login Events</h3>
       <p class="security-hint">Recent login-related activity on your account (login, logout, password change, etc.).</p>
@@ -191,13 +184,8 @@ const activeTab = ref('reviews')
 const saving = ref(false)
 const editError = ref('')
 const editSuccess = ref('')
-
-// Notify the navbar to refresh its currentUser (App.vue reads user from
-// localStorage and only re-evaluates on route changes / a "_bump" trigger).
 function syncNavbar() {
   window.dispatchEvent(new Event('storage'))
-  // Fallback: also bump a custom event so App.vue's _bump goes up
-  // (App.vue already listens to 'storage' for the same effect).
   try { window.dispatchEvent(new CustomEvent('app:auth-changed')) } catch (_) {}
 }
 
@@ -207,14 +195,10 @@ const myArticles = ref([])
 const tabCounts = ref({ reviews: 0, wishlist: 0, articles: 0, security: 0 })
 
 const editForm = ref({ nickname: '', avatar_url: '', bio: '', current_password: '', new_password: '' })
-
-// Avatar upload state (local-only until Save is pressed)
 const avatarFileInput = ref(null)
-const avatarFile = ref(null)        // the actual File object
-const avatarPreviewUrl = ref('')    // object URL for instant preview
+const avatarFile = ref(null)
+const avatarPreviewUrl = ref('')
 const avatarFileError = ref('')
-
-// Quick avatar picker state (clicking the big avatar in the header).
 const quickAvatarFileInput = ref(null)
 const quickUploading = ref(false)
 const quickUploadError = ref('')
@@ -250,7 +234,6 @@ function onAvatarFileChange(e) {
     clearAvatarFile()
     return
   }
-  // Revoke any prior object URL to avoid leaks
   if (avatarPreviewUrl.value) URL.revokeObjectURL(avatarPreviewUrl.value)
   avatarFile.value = f
   avatarPreviewUrl.value = URL.createObjectURL(f)
@@ -262,18 +245,13 @@ function clearAvatarFile() {
   avatarFile.value = null
   if (avatarFileInput.value) avatarFileInput.value.value = ''
 }
-
-// Open the hidden file picker wired to the main page avatar.
 function openQuickAvatarPicker() {
   if (quickUploading.value) return
   quickUploadError.value = ''
   quickAvatarFileInput.value && quickAvatarFileInput.value.click()
 }
-
-// Handle the file the user picked via the quick avatar (header) control.
 async function onQuickAvatarChange(e) {
   const f = e.target.files && e.target.files[0]
-  // Always reset the input so picking the same file again still triggers change.
   if (quickAvatarFileInput.value) quickAvatarFileInput.value.value = ''
   if (!f) return
   const err = validateAvatarFile(f)
@@ -295,8 +273,6 @@ async function onQuickAvatarChange(e) {
     quickUploading.value = false
   }
 }
-
-// Login events state
 const loginEvents = ref([])
 const loginEventsPage = ref(1)
 const loginEventsPages = ref(1)
@@ -306,7 +282,7 @@ const tabs = [
   { key: 'wishlist', label: 'Wishlist' },
   { key: 'articles', label: 'Articles' },
   { key: 'security', label: 'Security' }
-] // 'security' surfaces login events
+]
 
 const initials = computed(() => {
   const name = profile.value.nickname || profile.value.username || '?'
@@ -334,8 +310,6 @@ const saveProfile = async () => {
   editError.value = ''
   editSuccess.value = ''
   try {
-    // If a local file is selected, upload it first. The server endpoint
-    // already persists user.avatar_url, so the matching PUT below is skipped.
     if (avatarFile.value) {
       try {
         const up = await usersAPI.uploadAvatar(avatarFile.value)
@@ -351,7 +325,6 @@ const saveProfile = async () => {
 
     const payload = {}
     if (editForm.value.nickname) payload.nickname = editForm.value.nickname
-    // Only PUT avatar_url when we did not just upload a file (server already saved it).
     if (editForm.value.avatar_url && !avatarFile.value) payload.avatar_url = editForm.value.avatar_url
     if (editForm.value.bio) payload.bio = editForm.value.bio
     if (editForm.value.new_password) {
@@ -363,8 +336,6 @@ const saveProfile = async () => {
     }
     editSuccess.value = 'Profile updated!'
     await loadProfile()
-    // Persist the updated profile so the navbar avatar/nickname reflect the
-    // change immediately (no manual reload required).
     localStorage.setItem('user', JSON.stringify(profile.value))
     syncNavbar()
     showEditForm.value = false
@@ -394,7 +365,6 @@ const loadLoginEvents = async () => {
 
 const shortUA = (ua) => {
   if (!ua) return 'Unknown'
-  // Trim UA to its first segments; full version is in the title attribute on hover.
   return ua.length > 80 ? ua.slice(0, 80) + '...' : ua
 }
 
@@ -558,7 +528,6 @@ onMounted(async () => {
 
 .badge-featured { background: #f5a623; color: white; padding: 0.1rem 0.5rem; border-radius: 10px; font-size: 0.75rem; }
 
-/* Login events / Security tab */
 .security-title { color: #1a5e63; margin-bottom: 0.3rem; }
 .security-hint  { color: #888; font-size: 0.85rem; margin-bottom: 1rem; }
 

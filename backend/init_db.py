@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Initialize MySQL database with REAL scraped Belarus tourism data.
-Data sources: Wikipedia, belarus.by, tourismattractions.net, nashaniva.com (2026)
-Run: python init_db.py
-"""
 import os
 import re
 import pymysql
@@ -14,11 +8,6 @@ from werkzeug.security import generate_password_hash
 
 
 def ensure_database_exists():
-    """
-    Parse Config.SQLALCHEMY_DATABASE_URI and create the database if it
-    does not exist. Avoids the common (1049, 'Unknown database ...') crash
-    the very first time someone runs init_db.py.
-    """
     uri = Config.SQLALCHEMY_DATABASE_URI
     m = re.match(r'mysql\+pymysql://([^:]+):([^@]+)@([^:/]+)(?::(\d+))*/([^?]+)', uri)
     if not m:
@@ -40,11 +29,7 @@ def ensure_database_exists():
         conn.close()
 
 
-# ─────────────────────────────────────────────────────────
 BELARUS_ATTRACTIONS = [
-    # ══════════════════════════════════════════════════════════
-    # UNESCO WORLD HERITAGE SITES
-    # ══════════════════════════════════════════════════════════
     {'name': 'Mir Castle Complex', 'name_en': 'Mir Castle Complex',
      'description': 'A UNESCO World Heritage Site since 2000. Built in the early 16th century in late Brick Gothic style, Mir Castle is one of the finest examples of fortified architecture from the former Polish-Lithuanian Commonwealth. Five towers rise 27 metres above the defensive moat, surrounding a central courtyard. Later Renaissance and Baroque additions created a unique blend of architectural styles. Located beside a picturesque lake whose waters perfectly mirror the castle silhouette. Houses a museum with period furniture, weaponry, tapestries, and portraits tracing 500 years of history through Lithuanian, Polish, Russian, and Belarusian ownership.',
      'short_desc': 'UNESCO World Heritage Site — a 16th-century Gothic-Renaissance fortified castle with five towers.',
@@ -80,9 +65,6 @@ BELARUS_ATTRACTIONS = [
      'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Struve-Geodetic-Arc-04.jpg/640px-Struve-Geodetic-Arc-04.jpg',
      'avg_rating': 4.0, 'is_featured': False, 'is_verified': True},
 
-    # ══════════════════════════════════════════════════════════
-    # CASTLES (real Belarus castles)
-    # ══════════════════════════════════════════════════════════
     {'name': 'Lida Castle', 'name_en': 'Lida Castle',
      'description': 'A well-preserved 14th-century fortified castle built by Prince Gediminas of the Grand Duchy of Lithuania. One of the few medieval brick castles in Belarus that retains much of its original defensive structure, including four corner towers and fortified walls. The castle played a key role in defending the western borders of the Grand Duchy. According to legend, Grand Duke Vytautas the Great ordered its construction. The castle hosts medieval reenactment festivals and knight tournaments during summer months.',
      'short_desc': '14th-century Gediminas-era castle — one of the best-preserved medieval brick castles in Belarus.',
@@ -133,9 +115,6 @@ BELARUS_ATTRACTIONS = [
      'opening_hours': 'External viewing only', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Mensk_zas%D1%8Dc%D1%8D%D1%8D%D1%8D.jpg/640px-Mensk_zas%D1%8Dc%D1%8D%D1%8D%D1%8D.jpg',
      'avg_rating': 3.5, 'is_featured': False, 'is_verified': True},
 
-    # ══════════════════════════════════════════════════════════
-    # WAR MEMORIALS
-    # ══════════════════════════════════════════════════════════
     {'name': 'Brest Hero Fortress', 'name_en': 'Brest Fortress',
      'description': 'A sprawling memorial complex on the border with Poland. On 22 June 1941, this 19th-century citadel was among the very first targets of Operation Barbarossa. The garrison held out for over a month against overwhelming German forces — one of the longest last-stand battles of WWII. The centrepiece is the colossal "Courage" sculpture, a concrete head emerging from a rock face ranking among the largest portrait sculptures in the world. The Defence of Brest Fortress Museum displays maps, personal belongings, and recovered weaponry. The fortress has drawn 2.8 million visitors over the past five years and held about 55,000 guided tours.',
      'short_desc': 'Heroic WWII fortress — first battle site of the Great Patriotic War, symbol of endurance.',
@@ -178,9 +157,6 @@ BELARUS_ATTRACTIONS = [
      'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Minsk_Pobedy_square.jpg/640px-Minsk_Pobedy_square.jpg',
      'avg_rating': 4.2, 'is_featured': False, 'is_verified': True},
 
-    # ══════════════════════════════════════════════════════════
-    # MUSEUMS
-    # ══════════════════════════════════════════════════════════
     {'name': 'Great Patriotic War Museum', 'name_en': 'Museum of the Great Patriotic War',
      'description': 'The largest military history museum in Belarus, opened in 2014 on the 70th anniversary of the liberation of Minsk. Located near the Svislach River, the modern building holds over 8,000 artefacts with immersive dioramas and multimedia installations. The story of Belarus during WWII — in which the country lost approximately a quarter of its population — is told through personal belongings, weapons, uniforms, and interactive exhibits. The rooftop observation deck offers panoramic views of Minsk.',
      'short_desc': 'Largest WWII museum in Belarus — 8,000+ artefacts, immersive multimedia exhibits, rooftop views.',
@@ -239,9 +215,6 @@ BELARUS_ATTRACTIONS = [
      'opening_hours': '10:00 - 18:00', 'ticket_price': 3.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Berestye_archaeological_museum.jpg/640px-Berestye_archaeological_museum.jpg',
      'avg_rating': 4.1, 'is_featured': False, 'is_verified': True},
 
-    # ══════════════════════════════════════════════════════════
-    # CHURCHES & RELIGIOUS SITES
-    # ══════════════════════════════════════════════════════════
     {'name': 'SS. Boris and Gleb Church (Kalozha)', 'name_en': 'SS. Boris and Gleb Church, Grodno',
      'description': 'Built in the 1180s in brick and stone, this church in Grodno is one of the oldest surviving examples of Belarusian architecture. Only two walls, three apses, and two pillars remain from the original 12th-century structure; the rest collapsed during a landslide of the high bank of the Neman River. Still an active place of worship, it is one of the most-visited religious sites in Belarus, ranking as the third-most-popular monument with approximately 16,000 visitors in 2026.',
      'short_desc': '12th-century church — one of the oldest surviving structures in Belarus, in active worship.',
@@ -308,9 +281,6 @@ BELARUS_ATTRACTIONS = [
      'opening_hours': 'By arrangement', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Barysagleb_Mogilev.jpg/640px-Barysagleb_Mogilev.jpg',
      'avg_rating': 4.1, 'is_featured': False, 'is_verified': True},
 
-    # ══════════════════════════════════════════════════════════
-    # PALACES & ESTATES
-    # ══════════════════════════════════════════════════════════
     {'name': 'Gomel Palace and Park Ensemble', 'name_en': 'Rumyantsev-Paskevich Palace',
      'description': 'One of the most beautiful architectural monuments in Belarus, featured on the Belarusian 20-ruble banknote. The palace complex includes the main neoclassical building, the Church of St. Nicholas, a chapel with burial vault, a winter garden, a watchtower, and an 800-metre-long ancient park along the Sozh River. Home to the Rumyantsev and Paskevich families. Today it serves as a major museum complex and cultural centre.',
      'short_desc': 'Palace featured on the 20-ruble note — neoclassical ensemble with park on the Sozh River.',
@@ -335,9 +305,6 @@ BELARUS_ATTRACTIONS = [
      'opening_hours': '10:00 - 17:00 (Tue-Sun)', 'ticket_price': 4.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Oginski_Zalesye_Mogilev.jpg/640px-Oginski_Zalesye_Mogilev.jpg',
      'avg_rating': 4.1, 'is_featured': False, 'is_verified': True},
 
-    # ══════════════════════════════════════════════════════════
-    # NATIONAL PARKS & NATURE
-    # ══════════════════════════════════════════════════════════
     {'name': 'Narochansky National Park', 'name_en': 'Narochansky National Park',
      'description': 'Named after Lake Naroch — the largest lake in Belarus at 79.6 square kilometres — this park encompasses the lake, surrounding pine forests, and several smaller lakes. The area is known for its sandy beaches, clear water, pine forests, and tranquil natural beauty. Water sports, swimming, and beach recreation are popular in summer. The town of Naroch is a popular resort destination with sanatoriums and guesthouses.',
      'short_desc': 'Largest lake in Belarus (79.6 km²) with sandy beaches and pine forests.',
@@ -396,9 +363,6 @@ BELARUS_ATTRACTIONS = [
      'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Mikashevichy_chalk_quarries.jpg/640px-Mikashevichy_chalk_quarries.jpg',
      'avg_rating': 4.1, 'is_featured': False, 'is_verified': True},
 
-    # ══════════════════════════════════════════════════════════
-    # MINSK CITY SIGHTS
-    # ══════════════════════════════════════════════════════════
     {'name': 'National Library of Belarus', 'name_en': 'National Library of Belarus',
      'description': 'One of the most recognizable symbols of modern Minsk, this rhombicuboctahedron-shaped building holds over 10 million items and features a rooftop observation deck with panoramic 360-degree views of Minsk. The building is illuminated at night with a massive LED display. The library is a major research institution and hosts cultural events, exhibitions, and conferences.',
      'short_desc': 'Iconic diamond-shaped building — 10M+ items, rooftop observation deck, symbol of modern Minsk.',
@@ -448,9 +412,6 @@ BELARUS_ATTRACTIONS = [
      'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Minsk_Sea_Reservoir.jpg/640px-Minsk_Sea_Reservoir.jpg',
      'avg_rating': 4.2, 'is_featured': False, 'is_verified': True},
 
-    # ══════════════════════════════════════════════════════════
-    # MORE NATIONAL/REGIONAL PARKS
-    # ══════════════════════════════════════════════════════════
     {'name': 'Pripyat Floodplain Landscape Reserve', 'name_en': 'Pripyat Floodplain Reserve',
      'description': 'A nature reserve protecting the unique floodplain landscape of the Pripyat River wetlands. Features oxbow lakes, marshes, floodplain forests, and meadows teeming with waterfowl and aquatic life. An important ecological corridor for migratory birds between Central Europe and Russia.',
      'short_desc': 'Pripyat River wetlands — oxbow lakes, waterfowl, and migratory bird corridor.',
@@ -483,9 +444,6 @@ BELARUS_ATTRACTIONS = [
      'opening_hours': '08:00 - 18:00', 'ticket_price': 2.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Vitebsk_botanical_garden.jpg/640px-Vitebsk_botanical_garden.jpg',
      'avg_rating': 4.1, 'is_featured': False, 'is_verified': True},
 
-    # ══════════════════════════════════════════════════════════
-    # HISTORIC TOWNS & CITIES
-    # ══════════════════════════════════════════════════════════
     {'name': 'Grodno Old Town', 'name_en': 'Grodno Old Town',
      'description': 'Grodno is one of the few Belarusian cities with a well-preserved historic old town, featuring buildings from the 13th to 19th centuries. Highlights include the former Royal Castle site, the old market square, the New Town area with Polish-era merchant houses, and the Old Town\'s cobblestone streets. The city survived WWII largely intact and retains a genuine historical atmosphere.',
      'short_desc': 'Well-preserved old town — buildings from the 13th to 19th centuries, genuine historical atmosphere.',
@@ -518,9 +476,6 @@ BELARUS_ATTRACTIONS = [
      'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Petrikov.jpg/640px-Petrikov.jpg',
      'avg_rating': 4.0, 'is_featured': False, 'is_verified': True},
 
-    # ══════════════════════════════════════════════════════════
-    # SLAVIANSKI BAZAAR & CULTURAL EVENTS
-    # ══════════════════════════════════════════════════════════
     {'name': 'Slavianski Bazaar Amphitheatre', 'name_en': 'Slavianski Bazaar Venue',
      'description': 'The annual Slavianski Bazaar international arts festival in Vitebsk is one of the largest cultural events in Eastern Europe, held every July since 1992. The festival attracts performers and visitors from across the Slavic world and beyond. The main amphitheatre venue seats thousands and hosts concerts, theatre performances, and dance competitions.',
      'short_desc': 'Venue for the annual Slavianski Bazaar — the largest cultural festival in Eastern Europe.',
@@ -545,9 +500,6 @@ BELARUS_ATTRACTIONS = [
      'opening_hours': '10:00 - 18:00 (Tue-Sun)', 'ticket_price': 3.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Brest_museum.jpg/640px-Brest_museum.jpg',
      'avg_rating': 4.0, 'is_featured': False, 'is_verified': True},
 
-    # ══════════════════════════════════════════════════════════
-    # MORE NATURAL & RECREATIONAL SITES
-    # ══════════════════════════════════════════════════════════
     {'name': 'Vileyka Lake District', 'name_en': 'Vileyka Lake District',
      'description': 'A cluster of small glacial lakes around the town of Vileyka in northern Minsk Oblast. Known for its tranquil environment, excellent fishing, and opportunities for kayaking. The lakes were formed by glacial activity during the last Ice Age and vary in depth and character.',
      'short_desc': 'Glacial lake cluster near Vileyka — fishing, kayaking, and a tranquil environment.',
@@ -580,9 +532,6 @@ BELARUS_ATTRACTIONS = [
      'opening_hours': '08:00 - 22:00', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Loshitsa_Minsk.jpg/640px-Loshitsa_Minsk.jpg',
      'avg_rating': 4.2, 'is_featured': False, 'is_verified': True},
 
-    # ══════════════════════════════════════════════════════════
-    # AUGUSTOW CANAL & WATERWAYS
-    # ══════════════════════════════════════════════════════════
     {'name': 'Augustow Canal', 'name_en': 'Augustow Canal',
      'description': 'A UNESCO tentative list site built in 1823-1839 to connect the Neman River with the Vistula River. A remarkable feat of 19th-century engineering, the canal includes 18 locks and enables navigation between the Baltic and Black Sea basins. The surrounding landscape of forests and lakes makes it popular for canoeing, cycling, and nature observation.',
      'short_desc': '19th-century canal — engineering feat with 18 locks, popular for canoeing and cycling.',
@@ -599,9 +548,6 @@ BELARUS_ATTRACTIONS = [
      'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Berezina_canal_locks.jpg/640px-Berezina_canal_locks.jpg',
      'avg_rating': 4.0, 'is_featured': False, 'is_verified': True},
 
-    # ══════════════════════════════════════════════════════════
-    # MORE MUSEUMS & CULTURAL SITES
-    # ══════════════════════════════════════════════════════════
     {'name': 'Polotsk Museum of Local History', 'name_en': 'Polotsk Museum of Local History',
      'description': 'Housed in the 18th-century Jesuit college, this museum showcases the 1,000-year history of Polotsk — one of the oldest cities in Belarus and the former capital of a medieval principality. Collections include archaeology from the Viking Age, medieval manuscripts, and documents relating to the Polotsk Principality.',
      'short_desc': "1,000-year history of Polotsk — housed in an 18th-century Jesuit college.",
@@ -626,9 +572,6 @@ BELARUS_ATTRACTIONS = [
      'opening_hours': '10:00 - 17:00 (Tue-Sun)', 'ticket_price': 3.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Polatsk_Muzeum_Copernicana.jpg/640px-Polatsk_Muzeum_Copernicana.jpg',
      'avg_rating': 4.0, 'is_featured': False, 'is_verified': True},
 
-    # ══════════════════════════════════════════════════════════
-    # FORESTS, LAKES & SCENIC AREAS
-    # ══════════════════════════════════════════════════════════
     {'name': 'Drahichyn Forest', 'name_en': 'Drahichyn Forest',
      'description': 'A vast forested area near Drahichyn, part of the Pripyat floodplain landscape reserve. The forest is home to elk, deer, wild boar, and numerous bird species. Nature trails allow visitors to explore the ecosystem without disturbing sensitive habitats.',
      'short_desc': 'Vast Pripyat floodplain forest — elk, deer, wild boar, and nature trails.',
@@ -661,9 +604,6 @@ BELARUS_ATTRACTIONS = [
      'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Svisloch_hills.jpg/640px-Svisloch_hills.jpg',
      'avg_rating': 3.9, 'is_featured': False, 'is_verified': True},
 
-    # ══════════════════════════════════════════════════════════
-    # MORE URBAN LANDMARKS
-    # ══════════════════════════════════════════════════════════
     {'name': 'Minsk Central Railway Station', 'name_en': 'Minsk Central Railway Station',
      'description': 'The main railway station of Minsk, a major hub serving connections across Belarus and international routes to Moscow, Warsaw, Vilnius, and Berlin. The current building dates from 1993 and replaced the original Soviet-era station. The hall features murals depicting Belarusian history and culture.',
      'short_desc': 'Minsk main railway hub — connections across Belarus and international routes.',
@@ -696,9 +636,6 @@ BELARUS_ATTRACTIONS = [
      'opening_hours': '08:00 - 22:00', 'ticket_price': 10.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Minsk_Arena.jpg/640px-Minsk_Arena.jpg',
      'avg_rating': 4.3, 'is_featured': False, 'is_verified': True},
 
-    # ══════════════════════════════════════════════════════════
-    # FORTRESSES & ARCHAEOLOGY
-    # ══════════════════════════════════════════════════════════
     {'name': 'Babruysk Fortress', 'name_en': 'Babruysk Fortress',
      'description': 'An 18th-century fortress on the Berezina River built during the Russian Empire period. The fortress played a role in the Battle of Berezina during the Napoleonic Wars and later served as a military installation. Partially preserved walls and bastions can still be seen in the city centre of Babruysk.',
      'short_desc': '18th-century fortress on the Berezina River — played a role in the Napoleonic Wars.',
@@ -715,9 +652,6 @@ BELARUS_ATTRACTIONS = [
      'opening_hours': 'Open all day', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Bruzdzitsy_settlement.jpg/640px-Bruzdzitsy_settlement.jpg',
      'avg_rating': 3.9, 'is_featured': False, 'is_verified': True},
 
-    # ══════════════════════════════════════════════════════════
-    # MORE RELIGIOUS SITES
-    # ══════════════════════════════════════════════════════════
     {'name': 'Muravanka Church (Fortress Church)', 'name_en': 'Muravanka Church',
      'description': 'A 16th-century Roman Catholic fortress church (defensive church) in the village of Muravanka. One of the finest examples of fortified churches in Belarus, built during the time of the Polish-Lithuanian Commonwealth. The church served both as a place of worship and a defensive refuge during times of conflict.',
      'short_desc': '16th-century fortified church — defensive architecture of the Polish-Lithuanian Commonwealth.',
@@ -742,9 +676,6 @@ BELARUS_ATTRACTIONS = [
      'opening_hours': '07:00 - 19:00', 'ticket_price': 0.00, 'image_url': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Vitebsk_Trinity_Cathedral.jpg/640px-Vitebsk_Trinity_Cathedral.jpg',
      'avg_rating': 4.0, 'is_featured': False, 'is_verified': True},
 
-    # ══════════════════════════════════════════════════════════
-    # FATHER FROST ESTATE (BELOVEZHSKAYA)
-    # ══════════════════════════════════════════════════════════
     {'name': 'Residence of Ded Moroz (Father Frost)', 'name_en': 'Father Frost Estate',
      'description': 'The estate of Ded Moroz (Belarusian/Slavic Grandfather Frost) within the Belovezhskaya Pushcha National Park. Draws approximately 150,000 visitors annually, making it one of the most popular tourist attractions in Belarus. Features animated fairy-tale characters carved from wood, a workshop where gifts are made, and a New Year\'s train. Open year-round but busiest during the winter holiday season.',
      'short_desc': 'Residence of Slavic Grandfather Frost — 150,000 visitors annually, fairy-tale wood carvings.',
@@ -755,18 +686,7 @@ BELARUS_ATTRACTIONS = [
 ]
 
 
-# ─────────────────────────────────────────────────────────
-# Init function
-# ─────────────────────────────────────────────────────────
 def fix_image_urls(app):
-    """
-    Re-point every attraction's image_url to the bundled local file
-    (/static/images/attractions/{id}.jpg) if it exists on disk.
-
-    fetch_images.py downloads the files but sometimes leaves the DB
-    pointing at the original Wikipedia URLs, which fail in offline /
-    firewalled environments.
-    """
     from models import Attraction
     img_dir = os.path.join(app.root_path, 'static', 'images', 'attractions')
     if not os.path.isdir(img_dir):
@@ -798,10 +718,8 @@ def init_db():
     ensure_database_exists()
     app = create_app()
     with app.app_context():
-        # Create all tables from SQLAlchemy models if they don't exist yet
         db.create_all()
         print('  tables ready.')
-        # ── Users ─────────────────────────────────────────
         if User.query.count() == 0:
             admin = User(
                 username='admin', email='admin@belarus-tourism.com',
@@ -818,9 +736,7 @@ def init_db():
             db.session.commit()
             print('Users: admin / admin123, demo / demo123')
 
-        # ── Attractions ────────────────────────────────────
         if True:
-            # Clear tables first
             db.session.execute(db.text('SET FOREIGN_KEY_CHECKS = 0'))
             db.session.execute(db.text('TRUNCATE TABLE attraction_tags'))
             db.session.execute(db.text('TRUNCATE TABLE attractions'))
@@ -836,7 +752,6 @@ def init_db():
             db.session.commit()
             print(f'{len(BELARUS_ATTRACTIONS)} REAL attractions inserted')
 
-        # ── Tags ───────────────────────────────────────────
         if Tag.query.count() == 0:
             tags = [
                 Tag(name='UNESCO World Heritage', slug='unesco', color='#f5a623', description='UNESCO World Heritage Sites in Belarus', use_count=3),
@@ -859,7 +774,6 @@ def init_db():
             db.session.commit()
             print(f'{len(tags)} tags created')
 
-        # ── Attraction Tags ────────────────────────────────
         if AttractionTag.query.count() == 0:
             for att in Attraction.query.all():
                 tag_ids = []
@@ -891,7 +805,6 @@ def init_db():
             db.session.commit()
             print('Auto-tagged all attractions')
 
-        # ── Sample Articles ────────────────────────────────
         if Article.query.count() == 0:
             articles_data = [
                 {'user_id': 1, 'attraction_id': 1,
@@ -982,7 +895,6 @@ def init_db():
             db.session.commit()
             print(f'{len(articles_data)} sample articles created')
 
-        # ── Sample Q&A ──────────────────────────────────
         if Question.query.count() == 0:
             q1 = Question(user_id=2, attraction_id=1,
                            title='What is the best time of year to visit Mir Castle?',
@@ -1006,7 +918,6 @@ def init_db():
             db.session.commit()
             print('Sample Q&A created')
 
-        # Repair any image URLs that still point at remote sources
         fix_image_urls(app)
 
         print('Database initialized successfully with REAL Belarus tourism data!')

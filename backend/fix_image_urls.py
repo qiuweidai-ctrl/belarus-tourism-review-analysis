@@ -1,14 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-One-shot fix: re-point every attraction's image_url to the bundled
-local file (/static/images/attractions/{id}.jpg).
-
-The image files were downloaded by fetch_images.py, but the database
-was left with Wikipedia URLs. When the client machine cannot reach
-Wikipedia (firewall / DNS), the frontend shows broken images.
-
-Run:  python fix_image_urls.py
-"""
 import os
 import pymysql
 

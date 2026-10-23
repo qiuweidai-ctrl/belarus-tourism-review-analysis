@@ -1,7 +1,3 @@
-"""
-Admin management routes.
-All endpoints require admin role.
-"""
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import User, Review, Attraction, LoginEvent, db
@@ -51,7 +47,6 @@ def dashboard_stats():
     pending_reviews = Review.query.filter_by(status='pending').count()
     banned_users = User.query.filter_by(status='banned').count()
 
-    # Monthly registration trend (last 6 months)
     from datetime import datetime, timedelta
     six_months_ago = datetime.utcnow() - timedelta(days=180)
     monthly_users = db.session.query(
@@ -222,21 +217,9 @@ def verify_attraction(attraction_id):
     return jsonify({'message': 'Attraction verified'}), 200
 
 
-# ============================================================
-# 登录事件日志（审计端点）—— admin 可以看到所有用户的登录事件
-# ============================================================
 @admin_bp.route('/login-events', methods=['GET'])
 @require_admin
 def list_login_events():
-    """
-    获取登录事件日志（全平台审计）。
-
-    支持查询参数：
-      - page, per_page: 分页
-      - event_type: 过滤类型（login / logout / login_failed ...）
-      - user_id: 过滤某个用户
-      - ip: 过滤 IP
-    """
     from services import serialize_event
 
     page = request.args.get('page', 1, type=int)
@@ -255,7 +238,6 @@ def list_login_events():
 
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
 
-    # 顺便返回每个事件类型的统计，方便后台一览
     type_stats = dict(
         db.session.query(LoginEvent.event_type, func.count(LoginEvent.id))
         .group_by(LoginEvent.event_type).all()

@@ -1,7 +1,3 @@
-"""
-Base repository with common database operations.
-Implements the Repository pattern for data access abstraction.
-"""
 from app import db
 
 

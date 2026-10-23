@@ -1,6 +1,3 @@
-"""
-Wishlist routes (presentation layer).
-"""
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from repositories import WishlistRepository, AttractionRepository
@@ -68,8 +65,7 @@ def toggle_wishlist():
     if is_new:
         attraction_repo.increment_wishlist_count(attraction_id, 1)
     else:
-        # toggling visited - update wishlist count accordingly
-        attraction_repo.increment_wishlist_count(attraction_id, 0)
+        attraction_repo.increment_wishlist_count(attraction_id, -1)
 
     return jsonify({
         'message': 'Removed from wishlist' if not is_new else 'Added to wishlist',

@@ -1,6 +1,3 @@
-"""
-User profile routes.
-"""
 import os
 import re
 import uuid
@@ -15,7 +12,7 @@ users_bp = Blueprint('users', __name__)
 user_repo = UserRepository()
 
 ALLOWED_AVATAR_EXT = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-AVATAR_MAX_BYTES = 4 * 1024 * 1024  # 4 MB
+AVATAR_MAX_BYTES = 4 * 1024 * 1024
 
 _FILENAME_SAFE_RE = re.compile(r'[^A-Za-z0-9_.-]+')
 
@@ -27,7 +24,6 @@ def _safe_filename(name: str) -> str:
 
 
 def _delete_old_avatar(absolute_path: str) -> None:
-    """Best-effort delete; never raises (so an orphan file doesn't 500 us)."""
     if not absolute_path:
         return
     try:
@@ -68,7 +64,6 @@ def update_me():
 
     data = request.get_json()
 
-    # Password change
     if data.get('new_password'):
         if not data.get('current_password'):
             return jsonify({'error': 'current_password is required'}), 400
@@ -77,7 +72,6 @@ def update_me():
             return jsonify({'error': 'Current password is incorrect'}), 400
         user.password_hash = generate_password_hash(data['new_password'])
 
-    # Profile update
     for field in ['nickname', 'avatar_url', 'bio']:
         if field in data:
             setattr(user, field, data[field])
@@ -89,7 +83,6 @@ def update_me():
 @users_bp.route('/me/avatar', methods=['POST'])
 @jwt_required()
 def upload_avatar():
-    """Upload (or replace) the current user's avatar. multipart/form-data field: 'avatar'."""
     user_id = int(get_jwt_identity())
     user = user_repo.get_by_id(user_id)
     if not user:
@@ -102,7 +95,6 @@ def upload_avatar():
     if not f or not f.filename:
         return jsonify({'error': 'No file selected'}), 400
 
-    # Validate extension
     orig = f.filename
     ext = orig.rsplit('.', 1)[-1].lower() if '.' in orig else ''
     if ext not in ALLOWED_AVATAR_EXT:
@@ -110,7 +102,6 @@ def upload_avatar():
             'error': f'Unsupported file type .{ext}. Allowed: {sorted(ALLOWED_AVATAR_EXT)}'
         }), 400
 
-    # Sniff actual content (don't trust the filename)
     head = f.read(8)
     f.seek(0)
     head_bytes = head[:8]
@@ -123,7 +114,6 @@ def upload_avatar():
     if not (is_png or is_jpg or is_gif or is_webp):
         return jsonify({'error': 'File content does not look like a valid image'}), 400
 
-    # Save file
     upload_root = current_app.config.get('UPLOAD_FOLDER') or 'static/uploads'
     avatar_dir = os.path.join(upload_root, 'avatars')
     os.makedirs(avatar_dir, exist_ok=True)
@@ -134,7 +124,6 @@ def upload_avatar():
 
     f.save(absolute_path)
 
-    # Enforce a size cap post-save (in case werkzeug doesn't surface it cleanly)
     try:
         size = os.path.getsize(absolute_path)
         if size > AVATAR_MAX_BYTES:
@@ -143,16 +132,11 @@ def upload_avatar():
     except OSError:
         pass
 
-    # Build public URL. Use the running app's host so it works in dev and prod.
     public_path = f'/static/uploads/avatars/{filename}'
     avatar_url = url_for('static', filename=f'uploads/avatars/{filename}', _external=False)
-    # url_for gives e.g. '/static/uploads/avatars/x.png'; prefer that form.
 
-    # Remove the previous uploaded avatar (only if it lived in our uploads folder —
-    # we never delete avatar URLs that the user typed in by hand).
     if user.avatar_url and user.avatar_url.startswith('/static/uploads/avatars/'):
         rel = user.avatar_url.lstrip('/').replace('/', os.sep)
-        # 'static/uploads/avatars/x.png'
         if rel.startswith('static' + os.sep) or rel.startswith('static/'):
             old_abs = os.path.join(current_app.root_path, rel) if hasattr(current_app, 'root_path') else os.path.join(os.getcwd(), rel)
         else:
@@ -165,7 +149,7 @@ def upload_avatar():
     return jsonify({
         'avatar_url': avatar_url,
         'size': os.path.getsize(absolute_path) if os.path.isfile(absolute_path) else None,
-        'url': avatar_url,  # alias
+        'url': avatar_url,
         'path': public_path,
     }), 200
 

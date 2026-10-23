@@ -9,11 +9,11 @@
         @input="debouncedFetch"
         class="search-input"
       />
-      <select v-model="category" @change="page.value = 1; syncQuery(); fetchAttractions()" class="filter-select">
+      <select v-model="category" @change="page = 1; syncQuery(); fetchAttractions()" class="filter-select">
         <option value="">{{ $t('attractions.allCategories') }}</option>
         <option v-for="c in categories" :key="c" :value="c">{{ c }}</option>
       </select>
-      <select v-model="sortBy" @change="page.value = 1; syncQuery(); fetchAttractions()" class="sort-select">
+      <select v-model="sortBy" @change="page = 1; syncQuery(); fetchAttractions()" class="sort-select">
         <option value="created_at">{{ $t('attractions.sortNew') }}</option>
         <option value="rating">{{ $t('attractions.sortRating') }}</option>
         <option value="name">{{ $t('attractions.sortName') }}</option>
@@ -107,9 +107,6 @@ const goToPage = (p) => {
   syncQuery()
   fetchAttractions()
 }
-
-// Keep page/search/category/sort in sync when the browser back/forward
-// buttons are used (they change route.query without re-running onMounted).
 watch(() => route.query, (q) => {
   if (q.page !== undefined) page.value = Number(q.page)
   if (q.search !== undefined) search.value = q.search
@@ -119,7 +116,6 @@ watch(() => route.query, (q) => {
 }, { immediate: false })
 
 onMounted(() => {
-  // Sync state from URL query params so Back navigation lands on the correct page.
   if (route.query.page) page.value = Number(route.query.page)
   if (route.query.search) search.value = route.query.search
   if (route.query.category) category.value = route.query.category

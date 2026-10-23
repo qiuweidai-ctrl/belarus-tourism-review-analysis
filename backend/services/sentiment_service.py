@@ -4,18 +4,10 @@ from config import Config
 
 
 class SentimentService:
-    """
-    Business logic layer for AI sentiment analysis.
-    Handles DeepSeek API calls and fallback mechanism.
-    """
     MODEL = 'deepseek-chat'
     TIMEOUT = 15
 
     def analyze(self, text: str) -> dict:
-        """
-        Analyze sentiment of the given text.
-        Returns dict with label, score, reason, and method.
-        """
         start_time = time.time()
 
         try:
@@ -75,7 +67,6 @@ class SentimentService:
         }
 
     def _fallback_analysis(self, text: str) -> dict:
-        """Keyword-based fallback when DeepSeek API is unavailable."""
         text_lower = text.lower()
         positive_words = {
             'amazing': 0.8, 'beautiful': 0.7, 'great': 0.6, 'excellent': 0.9,

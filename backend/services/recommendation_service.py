@@ -4,10 +4,6 @@ from config import Config
 
 
 class RecommendationService:
-    """
-    Business logic layer for AI-powered attraction recommendations.
-    Uses DeepSeek API to generate personalized recommendations based on user history.
-    """
     MODEL = 'deepseek-chat'
     TIMEOUT = 15
 

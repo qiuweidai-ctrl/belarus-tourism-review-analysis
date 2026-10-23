@@ -1,35 +1,15 @@
-# -*- coding: utf-8 -*-
-"""
-Belarus Tourism Data Scraper
-============================
-Scrapes Belarus tourist attractions from:
-  1. Wikidata SPARQL endpoint   → structured facts (name, coords, category, image)
-  2. Wikipedia REST API         → rich descriptions & extracts
-  3. Wikimedia Commons API      → high-quality images
-
-Usage:
-    python scrape_wikidata.py          # full pipeline
-    python scrape_wikidata.py --dry-run   # preview only, no DB write
-    python scrape_wikidata.py --limit 20   # cap at N results
-    python scrape_wikidata.py --skip-images  # skip image downloads
-
-Dependencies:
-    pip install requests
-
-Run from: belarus-tourism/backend/
-"""
 import os, sys, json, time, argparse
 import requests
 from datetime import datetime
+from urllib.parse import unquote
 
-# ── Config ───────────────────────────────────────────────────────────────────
 DRY_RUN        = False
 HEADERS        = {
     "User-Agent": "BelarusTourismBot/1.0 (Python/requests; educational project; belarus-tourism@example.com)"
 }
 BASE_DIR       = os.path.dirname(os.path.abspath(__file__))
 DATA_OUT       = os.path.join(BASE_DIR, "scraped_data.json")
-IMAGES_OUT_DIR = os.path.join(BASE_DIR, "static", "images")
+IMAGES_OUT_DIR = os.path.join(BASE_DIR, "static", "images", "attractions", "wikidata")
 os.makedirs(IMAGES_OUT_DIR, exist_ok=True)
 
 WD_SPARQL   = "https://query.wikidata.org/sparql"
@@ -37,8 +17,15 @@ WD_API      = "https://www.wikidata.org/w/api.php"
 WK_API      = "https://en.wikipedia.org/api/rest_v1"
 COMMONS_API = "https://commons.wikimedia.org/w/api.php"
 
-# ── SPARQL query ──────────────────────────────────────────────────────────────
-# Belarus attractions: castle, church, museum, memorial, palace, nature, etc.
+SKIP_IMPORT_NAMES = {
+    "Gomel Palace",
+    "Kosava Castle",
+    "Lukoml power station",
+    "Narachanski National Park",
+    "Saint Sophia Cathedral in Polotsk",
+    "Tower of Kamianiec",
+}
+
 WD_QUERY = """
 PREFIX wdt: <http://www.wikidata.org/prop/direct/>
 PREFIX wd:  <http://www.wikidata.org/entity/>
@@ -74,7 +61,6 @@ WHERE {
 LIMIT 500
 """
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
 
 def sparql_query(query: str, retry=3) -> list:
     for attempt in range(retry):
@@ -95,7 +81,6 @@ def sparql_query(query: str, retry=3) -> list:
 
 
 def resolve_coords(raw: str):
-    """Parse 'Point(lon lat)' → (lat, lon)."""
     if not raw:
         return None, None
     try:
@@ -107,7 +92,6 @@ def resolve_coords(raw: str):
 
 
 def wikidata_entity_batch(qids: list) -> dict:
-    """Fetch labels for a batch of QIDs in one API call."""
     if not qids:
         return {}
     try:
@@ -135,7 +119,6 @@ def wikidata_entity_batch(qids: list) -> dict:
 
 
 def wikidata_full(item_uri: str) -> dict:
-    """Fetch full entity data: labels, descriptions, types, location, heritage."""
     qid = item_uri.split("/")[-1]
     for attempt in range(4):
         try:
@@ -188,13 +171,11 @@ def wikidata_full(item_uri: str) -> dict:
             vals = get_prop(pid)
             return vals[0] if vals else None
 
-        # Batch-fetch type labels
         type_qids = get_prop("P31")[:4]
         type_map = wikidata_entity_batch(type_qids)
         type_labels = [v for v in (type_map.get(q) for q in type_qids) if v]
         type_labels_lower = [t.lower() for t in type_labels]
 
-        # Region
         region_qid = get1("P131")
         region_name = ""
         if region_qid:
@@ -219,7 +200,6 @@ def wikidata_full(item_uri: str) -> dict:
 
 
 def wikipedia_extract(title: str) -> dict:
-    """Fetch summary + thumbnail from Wikipedia REST API."""
     try:
         resp = requests.get(
             f"{WK_API}/page/summary/{requests.utils.quote(title)}",
@@ -239,7 +219,6 @@ def wikipedia_extract(title: str) -> dict:
 
 
 def wikipedia_full(title: str) -> str:
-    """Fetch full article text from Wikipedia parse API."""
     try:
         resp = requests.get(
             WD_API,
@@ -262,7 +241,6 @@ def wikipedia_full(title: str) -> str:
 
 
 def download_image(filename: str, out_dir: str, max_w: int = 800) -> str:
-    """Download a Wikimedia Commons image; return local path or ''."""
     try:
         resp = requests.get(
             COMMONS_API,
@@ -283,6 +261,7 @@ def download_image(filename: str, out_dir: str, max_w: int = 800) -> str:
             img_url = info.get("thumburl") or info.get("url", "")
             if not img_url:
                 continue
+            img_url = img_url.split("?", 1)[0]
             img_data = requests.get(img_url, headers=HEADERS, timeout=30)
             img_data.raise_for_status()
             safe = filename.replace("/", "_").replace(" ", "_")
@@ -296,7 +275,6 @@ def download_image(filename: str, out_dir: str, max_w: int = 800) -> str:
 
 
 def infer_category(types: list) -> str:
-    """Map Wikidata type labels → our category enum."""
     mapping = [
         (["castle", "ruins", "fort"],       "castle"),
         (["museum", "gallery", "exhibition"], "museum"),
@@ -355,14 +333,25 @@ def build_short_desc(item: dict) -> str:
     return f"{item.get('name_en', '')} — {cat_str}{loc}."
 
 
-# ── Phase 1: Wikidata SPARQL ─────────────────────────────────────────────────
-
-def phase1_wikidata() -> list:
+def phase1_wikidata(limit: int = 0) -> list:
     print("\n=== Phase 1: Wikidata SPARQL ===")
-    raw = sparql_query(WD_QUERY)
+    target = limit or 500
+    raw = []
+    unique_ids = set()
+    query_base = WD_QUERY.rsplit("LIMIT 500", 1)[0]
+    offset = 0
+    while len(unique_ids) < target:
+        page_query = f"{query_base}\nLIMIT 100\nOFFSET {offset}"
+        page = sparql_query(page_query)
+        if not page:
+            break
+        raw.extend(page)
+        unique_ids.update(row.get("item", {}).get("value", "") for row in page)
+        if len(page) < 100:
+            break
+        offset += 100
     print(f"  Raw bindings: {len(raw)}")
 
-    # Deduplicate
     seen, items = set(), []
     for row in raw:
         uri = row.get("item", {}).get("value", "")
@@ -372,7 +361,10 @@ def phase1_wikidata() -> list:
 
     print(f"  Deduplicated: {len(items)}")
 
-    # Batch process entity lookups (rate-limiting safe: 1 call per 3 items)
+    if limit > 0:
+        items = items[:limit]
+        print(f"  Limited to: {len(items)}")
+
     results = []
     total = len(items)
     for i, row in enumerate(items):
@@ -382,10 +374,10 @@ def phase1_wikidata() -> list:
 
         lat, lon = resolve_coords(row.get("coords", {}).get("value", ""))
         raw_img = row.get("image", {}).get("value", "")
-        filename = os.path.basename(raw_img) if raw_img else ""
+        filename = unquote(os.path.basename(raw_img)) if raw_img else ""
 
         entity = wikidata_full(uri)
-        time.sleep(0.35)  # Wikidata rate limit: ~1 req/sec is safe
+        time.sleep(0.35)
 
         region_name = entity.get("region_name", "")
 
@@ -417,8 +409,6 @@ def phase1_wikidata() -> list:
     return results
 
 
-# ── Phase 2: Wikipedia enrichment ────────────────────────────────────────────
-
 def phase2_wikipedia(items: list):
     print("\n=== Phase 2: Wikipedia enrichment ===")
     for i, item in enumerate(items):
@@ -437,7 +427,6 @@ def phase2_wikipedia(items: list):
             item["wiki_description"] = ""
             print("SKIP")
 
-        # Fallback: try full content if extract is tiny
         if not item.get("wiki_extract") or len(item["wiki_extract"]) < 80:
             full = wikipedia_full(title)
             if len(full) > 100:
@@ -446,8 +435,6 @@ def phase2_wikipedia(items: list):
 
         time.sleep(0.2)
 
-
-# ── Phase 3: Download images ─────────────────────────────────────────────────
 
 def phase3_images(items: list):
     print(f"\n=== Phase 3: Images → {IMAGES_OUT_DIR} ===")
@@ -463,9 +450,11 @@ def phase3_images(items: list):
         time.sleep(0.3)
 
 
-# ── Phase 4: Write to MySQL ─────────────────────────────────────────────────
+def _name_key(value: str) -> str:
+    return "".join(ch for ch in (value or "").casefold() if ch.isalnum())
 
-def phase4_db(items: list):
+
+def phase4_db(items: list, new_only: bool = False):
     print("\n=== Phase 4: MySQL DB update ===")
     if DRY_RUN:
         print("  [DRY RUN] DB writes skipped")
@@ -477,16 +466,31 @@ def phase4_db(items: list):
 
     app = create_app()
     with app.app_context():
-        existing = {a.name_en.lower(): a for a in Attraction.query.all()}
+        existing_rows = Attraction.query.all()
+        existing = {_name_key(a.name_en or a.name): a for a in existing_rows}
+
+        def find_existing(item):
+            match = existing.get(_name_key(item.get("name_en", "")))
+            if match:
+                return match
+            lat = item.get("latitude")
+            lon = item.get("longitude")
+            if lat is None or lon is None:
+                return None
+            for candidate in existing_rows:
+                if candidate.latitude is None or candidate.longitude is None:
+                    continue
+                if abs(float(candidate.latitude) - float(lat)) < 0.00015 and abs(float(candidate.longitude) - float(lon)) < 0.00015:
+                    return candidate
+            return None
 
         added = updated = skipped = 0
         for item in items:
             name = item["name_en"]
-            if not name:
+            if not name or name in SKIP_IMPORT_NAMES or item.get("category") == "other":
                 skipped += 1
                 continue
 
-            # Resolve heritage name
             heritage_qid = item.get("heritage_qid", "")
             if heritage_qid:
                 hmap = wikidata_entity_batch([heritage_qid])
@@ -495,19 +499,27 @@ def phase4_db(items: list):
             short_desc  = build_short_desc(item)
             description  = build_description(item)
 
-            # Local image path → static URL
             local_img = item.get("local_image_path", "")
             image_url = ""
-            if local_img and os.path.exists(local_img):
-                image_url = f"/static/images/{os.path.basename(local_img)}"
+            local_img_file = (
+                local_img
+                if os.path.isabs(local_img)
+                else os.path.join(BASE_DIR, local_img)
+            )
+            if local_img and os.path.exists(local_img_file):
+                relative_image = os.path.relpath(local_img_file, os.path.join(BASE_DIR, "static")).replace("\\", "/")
+                image_url = f"/static/{relative_image}"
             elif item.get("wiki_thumbnail", ""):
                 image_url = item["wiki_thumbnail"]
 
             city = item["region_name"].split()[0] if item["region_name"] else ""
 
-            att = existing.get(name.lower())
+            att = find_existing(item)
             if att:
-                # Update only empty fields (preserve user data)
+                if new_only:
+                    skipped += 1
+                    print(f"  [SKIP] {name}")
+                    continue
                 if not att.description or len(description) > len(att.description or ""):
                     att.description = description
                 if not att.short_desc:
@@ -531,6 +543,10 @@ def phase4_db(items: list):
                 updated += 1
                 print(f"  [UPDATE] {name}")
             else:
+                if not description and not image_url:
+                    skipped += 1
+                    print(f"  [SKIP] {name} (no description or image)")
+                    continue
                 att = Attraction(
                     name          = name,
                     name_en       = name,
@@ -554,6 +570,8 @@ def phase4_db(items: list):
                     created_by     = None,
                 )
                 db.session.add(att)
+                existing_rows.append(att)
+                existing[_name_key(name)] = att
                 added += 1
                 print(f"  [NEW] {name}")
 
@@ -562,13 +580,12 @@ def phase4_db(items: list):
     print(f"\n  Done: {added} added, {updated} updated, {skipped} skipped")
 
 
-# ── Main ─────────────────────────────────────────────────────────────────────
-
 def main():
     ap = argparse.ArgumentParser(description="Belarus Tourism Scraper")
     ap.add_argument("--dry-run",      action="store_true", help="Preview only, no DB writes")
     ap.add_argument("--limit",        type=int, default=0,   help="Max items (0=unlimited)")
     ap.add_argument("--skip-images",  action="store_true", help="Skip image downloads")
+    ap.add_argument("--new-only",     action="store_true", help="Do not change existing attractions")
     ap.add_argument("--output",       default=DATA_OUT,      help="JSON output path")
     args = ap.parse_args()
 
@@ -582,29 +599,20 @@ def main():
         print("  [DRY RUN mode — no DB writes]")
     print()
 
-    # Phase 1
-    items = phase1_wikidata()
+    items = phase1_wikidata(args.limit)
 
-    if args.limit > 0:
-        items = items[:args.limit]
-        print(f"\n  Limited to {args.limit} items")
-
-    # Phase 2
     phase2_wikipedia(items)
 
-    # Phase 3
     if not args.skip_images:
         phase3_images(items)
     else:
         print("\n=== Phase 3: SKIPPED ===")
 
-    # Save JSON
     with open(args.output, "w", encoding="utf-8") as f:
         json.dump(items, f, ensure_ascii=False, indent=2)
     print(f"\n  Data saved → {args.output}")
 
-    # Phase 4
-    phase4_db(items)
+    phase4_db(items, new_only=args.new_only)
 
     print("\n" + "=" * 55)
     print(" Done!")

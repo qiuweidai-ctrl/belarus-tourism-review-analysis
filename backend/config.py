@@ -3,9 +3,9 @@ import os
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'belarus-tourism-secret-key-2026'
-    SQLALCHEMY_DATABASE_URI = (
-        'mysql+pymysql://root:123456@localhost:3306/belarus_tourism'
-        '?charset=utf8mb4'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI') or (
+        'mysql+pymysql://root:123456@localhost:3306/'
+        'belarus_tourism?charset=utf8mb4'
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {
@@ -16,15 +16,12 @@ class Config:
     }
     SQLALCHEMY_ECHO = False
 
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-belarus-2026'
-    JWT_ACCESS_TOKEN_EXPIRES = 86400  # 24 hours
-    JWT_REFRESH_TOKEN_EXPIRES = 2592000  # 30 days
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'belarus-tourism-jwt-secret-key-2026-local'
+    JWT_ACCESS_TOKEN_EXPIRES = 86400
+    JWT_REFRESH_TOKEN_EXPIRES = 2592000
 
-    # Upload limits (avatars, article covers, etc.)
-    MAX_CONTENT_LENGTH = 8 * 1024 * 1024  # 8 MB per request
+    MAX_CONTENT_LENGTH = 8 * 1024 * 1024
     UPLOAD_FOLDER = 'static/uploads'
 
-    # DeepSeek API
-    # Override at runtime by setting the DEEPSEEK_API_KEY environment variable.
     DEEPSEEK_API_KEY = os.environ.get('DEEPSEEK_API_KEY') or ''
     DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions'

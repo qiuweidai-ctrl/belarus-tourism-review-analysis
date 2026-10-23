@@ -1,7 +1,3 @@
-"""
-SQLAlchemy ORM models for Belarus Tourism System.
-All models use BIGINT/FLOAT/DECIMAL to match MySQL 8 schema.
-"""
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Index, Enum as SQLEnum
@@ -237,7 +233,6 @@ class LoginToken(db.Model):
 
 
 class LoginEventType(enum.Enum):
-    """事件类型枚举 —— 这是"登录事件"概念的核心字段。"""
     login = 'login'
     register = 'register'
     logout = 'logout'
@@ -247,14 +242,6 @@ class LoginEventType(enum.Enum):
 
 
 class LoginEvent(db.Model):
-    """
-    登录事件日志表 —— 记录"谁在什么时间、用什么设备、在哪个 IP，做了登录相关的什么事"。
-
-    设计要点：
-    - 与 LoginToken 解耦：Token 是会话凭证；Event 是审计/安全日志。
-    - user_id 允许为空：登录失败时没有对应用户。
-    - 通过 (user_id, created_at) 和 (event_type, created_at) 索引，方便历史查询和事件统计。
-    """
     __tablename__ = 'login_events'
 
     id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
@@ -299,9 +286,6 @@ class SentimentAnalysisLog(db.Model):
     )
 
 
-# ============================================================
-# 10. articles: 旅游攻略/文章表
-# ============================================================
 class Article(db.Model):
     __tablename__ = 'articles'
 
@@ -371,9 +355,6 @@ class ArticleComment(db.Model):
     )
 
 
-# ============================================================
-# 11. questions: 景点问答表
-# ============================================================
 class Question(db.Model):
     __tablename__ = 'questions'
 
@@ -457,9 +438,6 @@ class AnswerUpvote(db.Model):
     )
 
 
-# ============================================================
-# 12. tags: 景点标签表
-# ============================================================
 class Tag(db.Model):
     __tablename__ = 'tags'
 
@@ -492,9 +470,6 @@ class AttractionTag(db.Model):
     )
 
 
-# ============================================================
-# 13. rating_dimensions: 多维度评分表
-# ============================================================
 class RatingDimension(db.Model):
     __tablename__ = 'rating_dimensions'
 

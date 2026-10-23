@@ -1,6 +1,3 @@
-"""
-Review routes (presentation layer).
-"""
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from repositories import (
@@ -82,10 +79,8 @@ def create_review():
 
     rating_score = data.get('rating', 3)
 
-    # Analyze sentiment via service layer
     sentiment_result = sentiment_service.analyze(data['content'])
 
-    # Save review
     review = review_repo.create(
         user_id=user_id,
         attraction_id=data['attraction_id'],
@@ -102,10 +97,8 @@ def create_review():
         status='published'
     )
 
-    # Save/update rating
     rating_repo.upsert(user_id, data['attraction_id'], rating_score)
 
-    # Update sentiment analysis log
     sentiment_log_repo.upsert(
         review_id=review.id,
         label=sentiment_result['label'],
@@ -117,7 +110,6 @@ def create_review():
         confidence=sentiment_result.get('confidence')
     )
 
-    # Recalculate attraction stats
     _update_attraction_stats(data['attraction_id'])
 
     return jsonify({

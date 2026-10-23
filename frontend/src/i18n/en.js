@@ -1,7 +1,8 @@
 export default {
   app: {
     title: 'Belarus Tourism',
-    subtitle: 'Attraction Review & Analysis System'
+    subtitle: 'Attraction Review & Analysis System',
+    searchPlaceholder: 'Search attractions, cities...'
   },
   nav: {
     home: 'Home',

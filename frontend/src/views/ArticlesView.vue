@@ -4,7 +4,7 @@
 
     <div class="controls">
       <input v-model="search" placeholder="Search articles..." @input="debouncedFetch" class="search-input" />
-      <select v-model="filterType" @change="page.value = 1; syncQuery(); fetchArticles()" class="sort-select">
+      <select v-model="filterType" @change="page = 1; syncQuery(); fetchArticles()" class="sort-select">
         <option value="">All Articles</option>
         <option value="true">Featured Only</option>
       </select>
@@ -74,18 +74,11 @@ const filterType = ref('')
 const page = ref(1)
 const totalPages = ref(1)
 const isLoggedIn = computed(() => !!localStorage.getItem('token'))
-
-// Cover image loading state. The earlier implementation pre-probed with
-// new Image() — but cross-origin images (Wikipedia etc.) often fail to probe
-// and fall back forever. Now we let <img>'s native onload/onerror drive the
-// state so success/failure is captured accurately.
 const coverLoaded = ref({})
 const coverFailed = ref({})
 
 const onCoverLoad = (id) => { coverLoaded.value[id] = true; coverFailed.value[id] = false }
 const onCoverError = (id) => { coverLoaded.value[id] = false; coverFailed.value[id] = true }
-
-// Pick a travel-themed emoji placeholder for the cover based on the title.
 const coverIcon = (article) => {
   const t = (article.title || '').toLowerCase()
   if (/castle|замок|несвиж|мир/.test(t)) return '🏰'
@@ -131,8 +124,6 @@ watch(() => route.query, (q) => {
 
 const fetchArticles = async () => {
   loading.value = true
-  // Reset cover state when fetching a new batch so old fail/loaded flags
-  // don't leak onto the new articles.
   coverLoaded.value = {}
   coverFailed.value = {}
   try {
@@ -149,7 +140,6 @@ const fetchArticles = async () => {
 const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 
 onMounted(() => {
-  // Sync state from URL query params so Back navigation lands on the correct page.
   if (route.query.page) page.value = Number(route.query.page)
   if (route.query.search) search.value = route.query.search
   if (route.query.featured) filterType.value = route.query.featured

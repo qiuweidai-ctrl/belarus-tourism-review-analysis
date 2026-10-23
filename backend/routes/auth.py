@@ -1,10 +1,3 @@
-"""
-Authentication routes (presentation layer).
-Receives HTTP requests, calls services, returns JSON responses.
-
-本文件中的每个 auth 端点都会通过 services.record_event 写入一条登录事件，
-方便后续审计 / 答辩演示。
-"""
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import (
     create_access_token, create_refresh_token,
@@ -39,7 +32,6 @@ def register():
         nickname=data.get('nickname')
     )
 
-    # 写入一条"注册"事件
     record_event('register', user=user, detail=f'New user registered: {user.username}')
 
     return jsonify({
@@ -56,7 +48,6 @@ def login():
 
     user = user_repo.find_by_username(data['username'])
 
-    # 登录失败的两种情况：用户不存在 / 密码错误 —— 都应该被审计记录
     if not user:
         record_event(
             'login_failed', username=data['username'],
@@ -83,7 +74,6 @@ def login():
     token = create_access_token(identity=str(user.id))
     refresh_token = create_refresh_token(identity=str(user.id))
 
-    # 写入一条"登录成功"事件
     record_event('login', user=user, detail='Login success')
 
     return jsonify({
@@ -106,7 +96,6 @@ def refresh():
     identity = get_jwt_identity()
     token = create_access_token(identity=identity)
 
-    # 刷新 token 也算一条事件
     user = user_repo.get_by_id(int(identity))
     record_event('token_refresh', user=user, detail='Access token refreshed')
 
@@ -116,11 +105,6 @@ def refresh():
 @auth_bp.route('/logout', methods=['POST'])
 @jwt_required()
 def logout():
-    """
-    用户主动注销。
-    前端原 logout 只清理 localStorage；现在追加后端事件记录，
-    以便审计用户最后活跃时间和注销习惯。
-    """
     user_id = int(get_jwt_identity())
     user = user_repo.get_by_id(user_id)
     record_event('logout', user=user, detail='User logged out')
@@ -130,10 +114,6 @@ def logout():
 @auth_bp.route('/events', methods=['GET'])
 @jwt_required()
 def my_events():
-    """
-    当前登录用户自己的登录事件列表（分页）。
-    答辩时打开这个端点即可看到完整审计链。
-    """
     from models import LoginEvent
     user_id = int(get_jwt_identity())
     page = request.args.get('page', 1, type=int)

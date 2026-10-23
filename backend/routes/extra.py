@@ -1,6 +1,3 @@
-"""
-Tag and multi-dimensional rating routes.
-"""
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import Tag, AttractionTag, RatingDimension, db
@@ -74,11 +71,9 @@ def set_attraction_tags(attraction_id):
     data = request.get_json()
     tag_ids = data.get('tag_ids', [])
 
-    # Remove existing
     AttractionTag.query.filter_by(attraction_id=attraction_id).delete()
     db.session.flush()
 
-    # Add new
     for tag_id in tag_ids:
         at = AttractionTag(attraction_id=attraction_id, tag_id=tag_id)
         db.session.add(at)
@@ -87,10 +82,6 @@ def set_attraction_tags(attraction_id):
     db.session.commit()
     return jsonify({'message': 'Tags updated'}), 200
 
-
-# ============================================================
-# Multi-dimensional ratings
-# ============================================================
 
 @tags_bp.route('/dimensions/<int:attraction_id>', methods=['GET'])
 def get_rating_dimensions(attraction_id):
@@ -101,7 +92,6 @@ def get_rating_dimensions(attraction_id):
         RatingDimension.created_at.desc()
     ).paginate(page=page, per_page=per_page, error_out=False)
 
-    # Compute averages
     dims = pagination.items
     if dims:
         avg = db.session.query(
@@ -136,7 +126,6 @@ def set_rating_dimensions():
     if not data.get('attraction_id'):
         return jsonify({'error': 'attraction_id is required'}), 400
 
-    # Update or create
     existing = RatingDimension.query.filter_by(
         user_id=user_id, attraction_id=data['attraction_id']
     ).first()

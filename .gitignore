@@ -59,10 +59,18 @@ secrets.json
 _*.py
 _*.txt
 _*.json
+_backup_images/
+_tmpimg/
 boot.out
 backend/boot.out
 frontend/boot.out
 backend/static/assets/
+
+# Keep only normalized Wikidata images used by the database
+backend/static/images/attractions/wikidata/*
+!backend/static/images/attractions/wikidata/[0-9]*.jpg
+backend/static/images/attractions/wikidata/2016-07-18_14-47._Спасо-Преображенский_собор.jpg
+backend/static/images/attractions/wikidata/2024.08.23_Church_of_Saint_Andrew_the_Apostle_in_Lyntupy_by_Tatiana_Markina_02.jpg
 
 # Local user images (used only during local development)
 user_img*.png
@@ -71,5 +79,6 @@ user_img*.png
 cleanup_docx_images.py
 insert_screenshots.py
 layout_figure_2_3.py
+fix_real_images.py
 take_screenshots.py
 screenshots/

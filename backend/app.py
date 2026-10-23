@@ -15,7 +15,6 @@ def create_app():
     db.init_app(app)
     jwt.init_app(app)
 
-    # Register blueprints (presentation layer -> routes)
     from routes.auth import auth_bp
     from routes.users import users_bp
     from routes.attractions import attractions_bp
@@ -26,6 +25,8 @@ def create_app():
     from routes.qa import qa_bp
     from routes.extra import tags_bp
     from routes.admin import admin_bp
+    from routes.algo import algo_bp
+    from routes.analytics import analytics_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -37,6 +38,8 @@ def create_app():
     app.register_blueprint(qa_bp, url_prefix='/api/qa')
     app.register_blueprint(tags_bp, url_prefix='/api/tags')
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
+    app.register_blueprint(algo_bp, url_prefix='/api/algo')
+    app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
 
     @app.route('/')
     def index():
@@ -44,9 +47,6 @@ def create_app():
 
     @app.route('/<path:path>')
     def serve_static(path):
-        # If the requested path is a real static file (asset with an extension),
-        # serve it. Otherwise fall back to index.html so the Vue Router can
-        # handle the client-side route (SPA history-mode fallback).
         import os as _os
         candidate = _os.path.join(app.static_folder, path)
         if _os.path.isfile(candidate):

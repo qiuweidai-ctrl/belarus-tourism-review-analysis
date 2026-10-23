@@ -1,4 +1,3 @@
-"""Execute schema.sql against the MySQL database."""
 import os
 import pymysql
 
@@ -8,18 +7,15 @@ SCHEMA_PATH = os.path.join(HERE, 'schema.sql')
 conn = pymysql.connect(host='localhost', user='root', password='123456', charset='utf8mb4')
 cursor = conn.cursor()
 
-# Drop and recreate database
 cursor.execute("DROP DATABASE IF EXISTS belarus_tourism")
 cursor.execute("CREATE DATABASE belarus_tourism CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
 cursor.execute("USE belarus_tourism")
 conn.commit()
 print("Database created")
 
-# Read and split schema.sql
 with open(SCHEMA_PATH, 'r', encoding='utf-8') as f:
     content = f.read()
 
-# Remove comments and split by semicolon
 statements = []
 current = []
 for line in content.splitlines():
@@ -34,7 +30,6 @@ for line in content.splitlines():
             statements.append(stmt)
         current = []
 
-# Execute each statement
 for i, stmt in enumerate(statements):
     try:
         cursor.execute(stmt)

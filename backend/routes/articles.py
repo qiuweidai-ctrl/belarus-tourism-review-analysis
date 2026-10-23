@@ -1,6 +1,3 @@
-"""
-Article (travel guide / blog) routes.
-"""
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import Article, ArticleLike, ArticleComment, db
@@ -55,7 +52,6 @@ def list_articles():
         query = query.filter_by(is_featured=featured)
     if search:
         like = f'%{search}%'
-        # 标题 / 摘要 / 内容任一匹配即返回
         query = query.filter(db.or_(
             Article.title.ilike(like),
             Article.summary.ilike(like),
