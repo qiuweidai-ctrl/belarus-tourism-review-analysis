@@ -16,13 +16,16 @@ A Flask + Vue 3 web application for Belarus tourism attractions with AI-powered 
 ```bash
 cd backend
 pip install -r requirements.txt
-python init_db.py
+python update_database.py
 python app.py
 ```
 
 The default local connection is `root:123456@localhost:3306/belarus_tourism`.
 Set `SQLALCHEMY_DATABASE_URI` in the environment to use a different MySQL
-account or host. The API runs at `http://localhost:5000`.
+account or host. `update_database.py` creates missing tables, adds the bundled
+attraction data, and fills missing sample ratings without deleting existing
+user data. It is safe to run again after an update. The API runs at
+`http://localhost:5000`.
 
 ### Add Attraction Data
 
