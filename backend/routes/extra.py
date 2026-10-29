@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import Tag, AttractionTag, RatingDimension, db
+from models import Tag, Attraction, AttractionTag, RatingDimension, User, db
 from sqlalchemy import func
 
 tags_bp = Blueprint('tags', __name__)
@@ -36,7 +36,7 @@ def list_tags():
 @tags_bp.route('', methods=['POST'])
 @jwt_required()
 def create_tag():
-    data = request.get_json()
+    data = request.get_json() or {}
     if not data.get('name') or not data.get('slug'):
         return jsonify({'error': 'name and slug are required'}), 400
 
@@ -68,7 +68,15 @@ def get_attraction_tags(attraction_id):
 @tags_bp.route('/attraction/<int:attraction_id>', methods=['POST'])
 @jwt_required()
 def set_attraction_tags(attraction_id):
-    data = request.get_json()
+    user_id = int(get_jwt_identity())
+    user = db.session.get(User, user_id)
+    attraction = db.session.get(Attraction, attraction_id)
+    if not attraction:
+        return jsonify({'error': 'Attraction not found'}), 404
+    if not user or (user.role != 'admin' and attraction.created_by != user_id):
+        return jsonify({'error': 'Only the creator or an admin can edit tags'}), 403
+
+    data = request.get_json() or {}
     tag_ids = data.get('tag_ids', [])
 
     AttractionTag.query.filter_by(attraction_id=attraction_id).delete()
@@ -121,7 +129,7 @@ def get_rating_dimensions(attraction_id):
 @jwt_required()
 def set_rating_dimensions():
     user_id = int(get_jwt_identity())
-    data = request.get_json()
+    data = request.get_json() or {}
 
     if not data.get('attraction_id'):
         return jsonify({'error': 'attraction_id is required'}), 400
@@ -131,6 +139,9 @@ def set_rating_dimensions():
     ).first()
 
     kwargs = {k: data.get(k) for k in ['scenery', 'service', 'value', 'facilities'] if data.get(k) is not None}
+    for value in kwargs.values():
+        if not isinstance(value, int) or value < 1 or value > 5:
+            return jsonify({'error': 'dimension ratings must be integers from 1 to 5'}), 400
 
     if existing:
         for k, v in kwargs.items():

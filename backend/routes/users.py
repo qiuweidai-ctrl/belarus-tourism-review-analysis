@@ -62,7 +62,7 @@ def update_me():
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
-    data = request.get_json()
+    data = request.get_json() or {}
 
     if data.get('new_password'):
         if not data.get('current_password'):
@@ -102,7 +102,7 @@ def upload_avatar():
             'error': f'Unsupported file type .{ext}. Allowed: {sorted(ALLOWED_AVATAR_EXT)}'
         }), 400
 
-    head = f.read(8)
+    head = f.read(12)
     f.seek(0)
     head_bytes = head[:8]
     def _looks_like(b: bytes, sig: bytes) -> bool:

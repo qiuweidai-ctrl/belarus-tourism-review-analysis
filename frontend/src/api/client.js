@@ -91,7 +91,6 @@ export const adminAPI = {
   approveReview(id) { return api.post(`/admin/reviews/${id}/approve`) },
   attractions(params = {}) { return api.get('/admin/attractions', { params }) },
   toggleFeature(id) { return api.post(`/admin/attractions/${id}/feature`) },
-  verifyAttraction(id) { return api.post(`/admin/attractions/${id}/verify`) },
   loginEvents(params = {}) { return api.get('/admin/login-events', { params }) }
 }
 export const analyticsAPI = {

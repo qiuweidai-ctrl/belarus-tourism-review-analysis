@@ -84,11 +84,27 @@ def list_users():
 @admin_bp.route('/users/<int:user_id>', methods=['PUT'])
 @require_admin
 def update_user(user_id):
+    actor_id = int(get_jwt_identity())
+    actor = user_repo.get_by_id(actor_id)
     user = user_repo.get_by_id(user_id)
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
-    data = request.get_json()
+    data = request.get_json() or {}
+    if actor.role != 'admin' and user.role == 'admin':
+        return jsonify({'error': 'Only an admin can edit an admin account'}), 403
+    if 'role' in data:
+        if actor.role != 'admin':
+            return jsonify({'error': 'Only an admin can change user roles'}), 403
+        if user_id == actor_id:
+            return jsonify({'error': 'You cannot change your own role'}), 400
+        if data['role'] not in ('user', 'moderator', 'admin'):
+            return jsonify({'error': 'Invalid role'}), 400
+    if 'status' in data:
+        if user_id == actor_id:
+            return jsonify({'error': 'You cannot change your own status'}), 400
+        if data['status'] not in ('active', 'inactive', 'banned'):
+            return jsonify({'error': 'Invalid status'}), 400
     for field in ['role', 'status', 'nickname', 'avatar_url', 'bio']:
         if field in data:
             setattr(user, field, data[field])
@@ -99,9 +115,15 @@ def update_user(user_id):
 @admin_bp.route('/users/<int:user_id>/ban', methods=['POST'])
 @require_admin
 def ban_user(user_id):
+    actor_id = int(get_jwt_identity())
+    actor = user_repo.get_by_id(actor_id)
     user = user_repo.get_by_id(user_id)
     if not user:
         return jsonify({'error': 'User not found'}), 404
+    if user_id == actor_id:
+        return jsonify({'error': 'You cannot ban your own account'}), 400
+    if user.role == 'admin' and actor.role != 'admin':
+        return jsonify({'error': 'Only an admin can ban an admin account'}), 403
     user.status = 'banned'
     db.session.commit()
     return jsonify({'message': 'User banned'}), 200
@@ -110,9 +132,12 @@ def ban_user(user_id):
 @admin_bp.route('/users/<int:user_id>/unban', methods=['POST'])
 @require_admin
 def unban_user(user_id):
+    actor = user_repo.get_by_id(int(get_jwt_identity()))
     user = user_repo.get_by_id(user_id)
     if not user:
         return jsonify({'error': 'User not found'}), 404
+    if user.role == 'admin' and actor.role != 'admin':
+        return jsonify({'error': 'Only an admin can unban an admin account'}), 403
     user.status = 'active'
     db.session.commit()
     return jsonify({'message': 'User unbanned'}), 200

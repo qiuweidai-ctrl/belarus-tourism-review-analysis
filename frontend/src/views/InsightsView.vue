@@ -74,9 +74,9 @@
     </section>
 
     <section class="chart-grid fade-up">
-      <ChartCard title="Ticket price bands" subtitle="Grouped into readable ranges instead of one slice per price" :option="priceOption" :loading="loading" height="320px">
-        <template #actions>
-          <span class="pill pill-accent">avg {{ priceSummary.avg }} BYN</span>
+      <ChartCard title="Ticket price bands" subtitle="Percentage of attractions in each price range" :option="priceOption" :loading="loading" height="320px">
+        <template #footer>
+          <span>Average ticket price: <strong>{{ Number(priceSummary.avg || 0).toFixed(2) }} BYN</strong></span>
         </template>
       </ChartCard>
       <ChartCard
@@ -119,7 +119,7 @@
             <span v-else class="no-img">🏛️</span>
             <span class="lb-name">
               <strong>{{ a.name }}</strong>
-              <em>{{ a.city || a.region || '—' }}</em>
+              <em>{{ formatPlace(a.city || a.region) || '—' }}</em>
             </span>
             <span class="lb-value">
               <strong>{{ metricValue(a) }}</strong>
@@ -138,6 +138,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { analyticsAPI } from '@/api/client.js'
 import StatCard from '../components/StatCard.vue'
 import ChartCard from '../components/ChartCard.vue'
+import { formatCategory, formatPlace } from '@/utils/displayText.js'
 
 const loading = ref(true)
 const error = ref('')
@@ -161,11 +162,18 @@ const metrics = [
 const metricLabel = computed(() => (metrics.find((m) => m.key === metric.value) || {}).label_ || '')
 const metricValue = (a) => (metrics.find((m) => m.key === metric.value) || metrics[0]).fmt(a)
 
+let signedInUser = null
+try {
+  signedInUser = JSON.parse(localStorage.getItem('user') || 'null')
+} catch (_) {
+  signedInUser = null
+}
+
 const exportDatasets = [
   { key: 'attractions', label: 'attractions' },
   { key: 'reviews', label: 'reviews' },
   { key: 'users', label: 'users' }
-]
+].filter((item) => item.key !== 'users' || ['admin', 'moderator'].includes(signedInUser?.role))
 
 const priceSummary = computed(() => price.value.summary || {})
 
@@ -230,8 +238,8 @@ const categoryOption = computed(() => {
   return {
     tooltip: {
       formatter: (p) => {
-        const r = rows.find((x) => x.category === p.name) || {}
-        return `<strong>${p.name}</strong><br/>Attractions: ${p.value}<br/>Avg rating: ${r.avg_rating}`
+        const r = rows.find((x) => formatCategory(x.category) === p.name) || {}
+        return `<strong>${p.name}</strong><br/>Attractions: ${p.value}<br/>Average rating: ${r.avg_rating}`
       }
     },
     series: [{
@@ -246,7 +254,7 @@ const categoryOption = computed(() => {
       upperLabel: { show: false },
       label: {
         show: true,
-        formatter: '{b}\n{c} spots',
+        formatter: '{b}\n{c} attractions',
         fontSize: 12,
         fontWeight: 600,
         color: '#fff'
@@ -256,7 +264,7 @@ const categoryOption = computed(() => {
         upperLabel: { show: false }
       }],
       data: rows.map((r) => ({
-        name: r.category,
+        name: formatCategory(r.category),
         value: r.count,
         avg: r.avg_rating
       }))
@@ -265,22 +273,29 @@ const categoryOption = computed(() => {
 })
 
 const regionOption = computed(() => {
-  const rows = [...(region.value.regions || [])]
+  const rows = [...(region.value.regions || [])].sort((a, b) => b.count - a.count)
   return {
-    grid: { left: 8, right: 40, top: 16, bottom: 8, containLabel: true },
+    grid: { left: 8, right: 40, top: 16, bottom: 34, containLabel: true },
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
       formatter: (ps) => {
-        const r = rows.find((x) => x.region === ps[0].name) || {}
-        return `${ps[0].name}<br/>Attractions: ${ps[0].value}<br/>Avg rating: ${r.avg_rating}`
+        const r = rows.find((x) => formatPlace(x.region) === ps[0].name) || {}
+        return `${ps[0].name}<br/>Attractions: ${ps[0].value}<br/>Average rating: ${r.avg_rating}`
       }
     },
-    xAxis: { type: 'value', name: 'Attractions' },
+    xAxis: {
+      type: 'value',
+      name: 'Attractions',
+      nameLocation: 'middle',
+      nameGap: 27,
+      nameTextStyle: { fontSize: 10 },
+      axisLabel: { fontSize: 9 }
+    },
     yAxis: {
       type: 'category',
-      data: rows.map((r) => r.region).reverse(),
-      axisLabel: { fontSize: 11 }
+      data: rows.map((r) => formatPlace(r.region)).reverse(),
+      axisLabel: { fontSize: 10 }
     },
     series: [{
       type: 'bar',
@@ -290,17 +305,35 @@ const regionOption = computed(() => {
         borderRadius: [0, 6, 6, 0],
         color: (p) => [brandGreen, brandTeal, blue, purple, amber, pink, cyan][p.dataIndex % 7]
       },
-      label: { show: true, position: 'right', fontWeight: 600, fontSize: 11 }
+      label: { show: true, position: 'right', fontWeight: 600, fontSize: 9 }
     }]
   }
 })
 
 const priceOption = computed(() => {
   const rows = price.value.bands || []
+  const total = rows.reduce((sum, row) => sum + Number(row.count || 0), 0)
+  const percentages = rows.map((row) => total ? Number((row.count / total * 100).toFixed(1)) : 0)
   return {
-    grid: { left: 8, right: 24, top: 24, bottom: 8, containLabel: true },
-    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    xAxis: { type: 'value', name: 'Attractions' },
+    grid: { left: 8, right: 24, top: 24, bottom: 32, containLabel: true },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: (items) => {
+        const item = items[0]
+        const source = rows.find((row) => row.label === item.name) || {}
+        return `${item.name}<br/>${item.value}% of attractions<br/>${source.count || 0} attractions`
+      }
+    },
+    xAxis: {
+      type: 'value',
+      name: 'Percentage of attractions',
+      nameLocation: 'middle',
+      nameGap: 27,
+      max: 100,
+      axisLabel: { formatter: '{value}%', fontSize: 9 },
+      nameTextStyle: { fontSize: 10 }
+    },
     yAxis: {
       type: 'category',
       data: rows.map((r) => r.label).reverse(),
@@ -308,13 +341,13 @@ const priceOption = computed(() => {
     },
     series: [{
       type: 'bar',
-      data: rows.map((r) => r.count).reverse(),
+      data: percentages.reverse(),
       barWidth: '58%',
       itemStyle: {
         borderRadius: [0, 6, 6, 0],
         color: (p) => [brandGreen, brandTeal, blue, purple, amber][p.dataIndex % 5]
       },
-      label: { show: true, position: 'right', fontWeight: 600, fontSize: 11 }
+      label: { show: true, position: 'right', formatter: '{c}%', fontWeight: 600, fontSize: 10 }
     }]
   }
 })
@@ -328,7 +361,7 @@ const trendOption = computed(() => {
     xAxis: { type: 'category', data: pts.map((p) => p.month), axisLabel: { fontSize: 11 } },
     yAxis: [
       { type: 'value', name: 'Reviews' },
-      { type: 'value', name: 'Avg rating', min: 0, max: 5, splitLine: { show: false } }
+      { type: 'value', name: 'Average rating', min: 0, max: 5, splitLine: { show: false } }
     ],
     series: [
       {
@@ -339,7 +372,7 @@ const trendOption = computed(() => {
         itemStyle: { borderRadius: [6, 6, 0, 0], color: brandTeal }
       },
       {
-        name: 'Avg rating',
+        name: 'Average rating',
         type: 'line',
         yAxisIndex: 1,
         data: pts.map((p) => p.avg_rating),
@@ -353,12 +386,12 @@ const trendOption = computed(() => {
 })
 
 const sentimentOption = computed(() => {
-  const rows = sentiment.value.by_category || []
+  const rows = [...(sentiment.value.by_category || [])].sort((a, b) => b.total - a.total)
   return {
     legend: { top: 0, icon: 'roundRect' },
     grid: { left: 8, right: 24, top: 44, bottom: 8, containLabel: true },
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    xAxis: { type: 'category', data: rows.map((r) => r.category), axisLabel: { fontSize: 11, interval: 0, rotate: rows.length > 6 ? 30 : 0 } },
+    xAxis: { type: 'category', data: rows.map((r) => formatCategory(r.category)), axisLabel: { fontSize: 11, interval: 0, rotate: rows.length > 6 ? 30 : 0 } },
     yAxis: { type: 'value', name: 'Reviews' },
     series: [
       {

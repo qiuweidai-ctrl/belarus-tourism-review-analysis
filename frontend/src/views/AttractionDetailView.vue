@@ -35,7 +35,7 @@
       </div>
       <div class="detail-info">
         <div class="detail-title-row">
-          <h1>{{ attraction.name }}</h1>
+          <h1>{{ attractionName(attraction) }}</h1>
           <button
             v-if="isLoggedIn"
             class="wishlist-detail-btn"
@@ -46,7 +46,7 @@
             {{ wishlisted ? '♥ Saved' : '♡ Save' }}
           </button>
         </div>
-        <p class="location">{{ attraction.location }}</p>
+        <p class="location">{{ formatPlace(attraction.location) }}</p>
         <div class="stats">
           <span class="rating">{{ $t('attractions.rating') }}: {{ attraction.avg_rating }} / 5</span>
           <span class="review-count">{{ attraction.review_count }} {{ $t('attractions.reviews') }}</span>
@@ -95,7 +95,7 @@
           <div v-else class="similar-img placeholder"></div>
           <div class="similar-info">
             <h4>{{ item.name }}</h4>
-            <p class="similar-location">{{ item.location }}</p>
+            <p class="similar-location">{{ formatPlace(item.location) }}</p>
             <div class="similar-meta">
               <span class="rating">★ {{ item.avg_rating }}</span>
               <span class="similarity-badge">{{ item.similarity }}% match</span>
@@ -106,7 +106,7 @@
     </div>
 
     <div v-if="topQualityReviews.length > 0" class="top-reviews-section">
-      <h2>🏆 Top Quality Reviews (TextRank)</h2>
+      <h2>🏆 Top Quality Reviews</h2>
       <div class="reviews-list">
         <div v-for="item in topQualityReviews" :key="item.review_id" class="review-card card highlight">
           <div class="review-quality-badge">
@@ -189,9 +189,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { attractionsAPI, reviewsAPI, recommendationsAPI, wishlistAPI, algoAPI } from '@/api/client.js'
+import { attractionName, formatPlace } from '@/utils/displayText.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -403,6 +404,19 @@ const goToAttraction = (id) => {
   router.push(`/attractions/${id}`)
 }
 
+const loadAttractionPage = async () => {
+  attraction.value = null
+  reviews.value = []
+  similarAttractions.value = []
+  topQualityReviews.value = []
+  aiSummary.value = ''
+  predictedRating.value = null
+  predictReason.value = ''
+  wishlisted.value = false
+  await Promise.all([fetchData(), fetchAlgoData()])
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 const submitReview = async () => {
   submitting.value = true
   try {
@@ -443,10 +457,11 @@ const toggleWishlist = async () => {
   }
 }
 
-onMounted(() => {
-  fetchData()
-  fetchAlgoData()
+watch(() => route.params.id, (id, previousId) => {
+  if (id && id !== previousId) loadAttractionPage()
 })
+
+onMounted(loadAttractionPage)
 </script>
 
 <style scoped>

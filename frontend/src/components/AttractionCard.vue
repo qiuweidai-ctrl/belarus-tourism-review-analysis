@@ -8,7 +8,6 @@
   >
     <div class="card-image" :style="imageStyle">
       <span v-if="attraction.is_featured" class="badge-featured" title="Editor's pick">★ Featured</span>
-      <span v-if="attraction.is_verified" class="badge-verified" title="Verified listing">✓ Verified</span>
       <button
         v-if="isLoggedIn"
         class="wishlist-btn"
@@ -22,11 +21,11 @@
     </div>
 
     <div class="card-body">
-      <h3>{{ attraction.name }}</h3>
+      <h3>{{ attractionName(attraction) }}</h3>
       <p class="card-location">
-        <span v-if="attraction.city">{{ attraction.city }}</span>
+        <span v-if="attraction.city">{{ formatPlace(attraction.city) }}</span>
         <span v-if="attraction.city && attraction.region" class="sep">·</span>
-        <span v-if="attraction.region">{{ attraction.region }}</span>
+        <span v-if="attraction.region">{{ formatPlace(attraction.region) }}</span>
       </p>
 
       <div class="card-stats">
@@ -54,6 +53,7 @@
 import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { wishlistAPI } from '@/api/client.js'
+import { attractionName, formatCategory, formatPlace } from '@/utils/displayText.js'
 
 const props = defineProps({
   attraction: { type: Object, required: true }
@@ -83,8 +83,7 @@ const shortDesc = computed(() => {
 })
 
 const categoryLabel = computed(() => {
-  const c = props.attraction.category || 'other'
-  return c.charAt(0).toUpperCase() + c.slice(1)
+  return formatCategory(props.attraction.category)
 })
 
 const toggleWishlist = async () => {
@@ -124,8 +123,7 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 
-.badge-featured,
-.badge-verified {
+.badge-featured {
   position: absolute;
   top: 10px; left: 10px;
   font-size: .7rem; font-weight: 700;
@@ -135,7 +133,6 @@ onMounted(async () => {
   color: var(--brand-700);
   box-shadow: var(--shadow-xs);
 }
-.badge-verified { background: rgba(16,185,129,.95); color: #fff; left: auto; right: 10px; }
 
 .wishlist-btn {
   position: absolute;

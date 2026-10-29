@@ -12,7 +12,7 @@
         <label>Attraction A</label>
         <select v-model="idA">
           <option value="">— pick an attraction —</option>
-          <option v-for="a in optionsForB" :key="'A' + a.id" :value="a.id">{{ a.name }} · {{ a.city || a.region || '—' }}</option>
+          <option v-for="a in optionsForB" :key="'A' + a.id" :value="a.id">{{ attractionName(a) }} · {{ formatPlace(a.city || a.region) || '—' }}</option>
         </select>
       </div>
       <button class="btn btn-ghost btn-sm swap" type="button" :disabled="!idA || !idB" @click="swap" title="Swap A and B">⇄</button>
@@ -20,7 +20,7 @@
         <label>Attraction B</label>
         <select v-model="idB">
           <option value="">— pick an attraction —</option>
-          <option v-for="a in optionsForA" :key="'B' + a.id" :value="a.id">{{ a.name }} · {{ a.city || a.region || '—' }}</option>
+          <option v-for="a in optionsForA" :key="'B' + a.id" :value="a.id">{{ attractionName(a) }} · {{ formatPlace(a.city || a.region) || '—' }}</option>
         </select>
       </div>
     </section>
@@ -42,7 +42,7 @@
     <section v-else class="stack fade-up">
       <section class="card summary">
         <div v-for="bar in summaryBars" :key="bar.key" class="sumrow">
-          <header><span>{{ bar.label }}</span><span class="win" v-if="bar.winner">{{ bar.winner === 'A' ? a.name : b.name }} wins</span></header>
+          <header><span>{{ bar.label }}</span><span class="win" v-if="bar.winner">{{ attractionName(bar.winner === 'A' ? a : b) }} wins</span></header>
           <div class="bars">
             <div class="bar a" :style="{ width: bar.a + '%' }"><span>{{ bar.aText }}</span></div>
             <div class="bar b" :style="{ width: bar.b + '%' }"><span>{{ bar.bText }}</span></div>
@@ -53,8 +53,8 @@
       <section class="card ctable">
         <div class="row ctable-head">
           <div class="cth attr">&nbsp;</div>
-          <div class="cth col a"><strong>{{ a.name }}</strong><em>{{ a.city || a.region || '' }}</em></div>
-          <div class="cth col b"><strong>{{ b.name }}</strong><em>{{ b.city || b.region || '' }}</em></div>
+          <div class="cth col a"><strong>{{ attractionName(a) }}</strong><em>{{ formatPlace(a.city || a.region) }}</em></div>
+          <div class="cth col b"><strong>{{ attractionName(b) }}</strong><em>{{ formatPlace(b.city || b.region) }}</em></div>
         </div>
         <div v-for="(row, i) in rows" :key="i" class="row ctable-row" :class="{ winA: row.winner === 'A', winB: row.winner === 'B' }">
           <div class="cth attr"><span class="ico">{{ row.icon }}</span><span>{{ row.label }}</span></div>
@@ -69,8 +69,7 @@
             </span>
             <span v-else-if="row.type === 'pills'">
               <span v-if="a.is_featured" class="pill pill-brand">Featured</span>
-              <span v-if="a.is_verified" class="pill pill-success">Verified</span>
-              <span v-if="!a.is_featured && !a.is_verified" class="muted">—</span>
+              <span v-if="!a.is_featured" class="muted">—</span>
             </span>
             <span v-else-if="row.type === 'price'">
               <strong v-if="a.ticket_price">{{ a.ticket_price.toFixed(2) }} BYN</strong>
@@ -91,8 +90,7 @@
             </span>
             <span v-else-if="row.type === 'pills'">
               <span v-if="b.is_featured" class="pill pill-brand">Featured</span>
-              <span v-if="b.is_verified" class="pill pill-success">Verified</span>
-              <span v-if="!b.is_featured && !b.is_verified" class="muted">—</span>
+              <span v-if="!b.is_featured" class="muted">—</span>
             </span>
             <span v-else-if="row.type === 'price'">
               <strong v-if="b.ticket_price">{{ b.ticket_price.toFixed(2) }} BYN</strong>
@@ -111,6 +109,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { attractionsAPI } from '@/api/client.js'
+import { attractionName, formatCategory, formatPlace } from '@/utils/displayText.js'
 import EmptyState from '../components/EmptyState.vue'
 
 const all = ref([])
@@ -157,9 +156,9 @@ const rows = computed(() => {
   const lowerWins  = (av, bv) => (av ?? Infinity) < (bv ?? Infinity) ? 'A' : ((av ?? Infinity) > (bv ?? Infinity) ? 'B' : null)
   return [
     { label: 'Image', icon: '🖼️', type: 'image' },
-    { label: 'City', icon: '🏙️', render: (x) => x.city },
-    { label: 'Region', icon: '🗺️', render: (x) => x.region },
-    { label: 'Category', icon: '🏷️', render: (x) => x.category ? x.category[0].toUpperCase() + x.category.slice(1) : '—' },
+    { label: 'City', icon: '🏙️', render: (x) => formatPlace(x.city) },
+    { label: 'Region', icon: '🗺️', render: (x) => formatPlace(x.region) },
+    { label: 'Category', icon: '🏷️', render: (x) => formatCategory(x.category) },
     { label: 'Rating', icon: '⭐', type: 'stars', winner: higherWins(A.avg_rating, B.avg_rating) },
     { label: 'Reviews', icon: '💬', type: 'number', render: (x) => (x.total_reviews || 0).toLocaleString('en-US'), winner: higherWins(A.total_reviews, B.total_reviews) },
     { label: 'Ticket price', icon: '🎟️', type: 'price', winner: lowerWins(A.ticket_price, B.ticket_price) },
@@ -168,8 +167,8 @@ const rows = computed(() => {
     { label: 'Sentiment', icon: '😊', render: (x) => (x.sentiment_score != null ? Number(x.sentiment_score).toFixed(2) : '—'), winner: higherWins(A.sentiment_score, B.sentiment_score) },
     { label: 'Best season', icon: '🌤️', render: (x) => x.suitable_season || '—' },
     { label: 'Opening hours', icon: '🕒', render: (x) => x.opening_hours || '—' },
-    { label: 'Location', icon: '📍', render: (x) => x.location },
-    { label: 'Badges', icon: '🏅', type: 'pills' }
+    { label: 'Location', icon: '📍', render: (x) => formatPlace(x.location) },
+    { label: 'Featured', icon: '🏅', type: 'pills' }
   ]
 })
 const summaryBars = computed(() => {

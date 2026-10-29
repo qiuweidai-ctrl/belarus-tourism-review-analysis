@@ -11,7 +11,7 @@
       />
       <select v-model="category" @change="page = 1; syncQuery(); fetchAttractions()" class="filter-select">
         <option value="">{{ $t('attractions.allCategories') }}</option>
-        <option v-for="c in categories" :key="c" :value="c">{{ c }}</option>
+        <option v-for="c in categories" :key="c" :value="c">{{ formatCategory(c) }}</option>
       </select>
       <select v-model="sortBy" @change="page = 1; syncQuery(); fetchAttractions()" class="sort-select">
         <option value="created_at">{{ $t('attractions.sortNew') }}</option>
@@ -43,6 +43,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { attractionsAPI } from '@/api/client.js'
 import AttractionCard from '../components/AttractionCard.vue'
+import { formatCategory } from '@/utils/displayText.js'
 
 const route = useRoute()
 const router = useRouter()

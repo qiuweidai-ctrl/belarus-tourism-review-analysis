@@ -68,7 +68,7 @@ def list_reviews():
 @jwt_required()
 def create_review():
     user_id = int(get_jwt_identity())
-    data = request.get_json()
+    data = request.get_json() or {}
 
     if not data.get('content') or not data.get('attraction_id'):
         return jsonify({'error': 'content and attraction_id are required'}), 400
@@ -77,7 +77,12 @@ def create_review():
     if not attraction:
         return jsonify({'error': 'Attraction not found'}), 404
 
-    rating_score = data.get('rating', 3)
+    try:
+        rating_score = int(data.get('rating', 3))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'rating must be an integer from 1 to 5'}), 400
+    if rating_score < 1 or rating_score > 5:
+        return jsonify({'error': 'rating must be an integer from 1 to 5'}), 400
 
     sentiment_result = sentiment_service.analyze(data['content'])
 
@@ -140,7 +145,7 @@ def delete_review(review_id):
 
     user_id = int(get_jwt_identity())
     user = user_repo.get_by_id(user_id)
-    if review.user_id != user_id and user.role not in ('admin', 'moderator'):
+    if review.user_id != user_id and (not user or user.role not in ('admin', 'moderator')):
         return jsonify({'error': 'Unauthorized'}), 403
 
     attraction_id = review.attraction_id

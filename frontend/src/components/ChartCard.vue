@@ -9,6 +9,9 @@
       <slot name="actions"></slot>
     </header>
     <BaseChart :option="option" :height="height" :loading="loading" :empty-text="emptyText" />
+    <footer v-if="$slots.footer" class="chart-footer">
+      <slot name="footer"></slot>
+    </footer>
   </section>
 </template>
 
@@ -30,4 +33,5 @@ defineProps({
 .chart-head { display: flex; align-items: flex-start; gap: .75rem; margin-bottom: .85rem; }
 .chart-head h3 { margin: 0; font-size: 1.02rem; }
 .chart-head p { margin: .15rem 0 0; font-size: .8rem; color: var(--text-mute); }
+.chart-footer { margin-top: .55rem; text-align: center; color: var(--text-soft); font-size: .8rem; }
 </style>

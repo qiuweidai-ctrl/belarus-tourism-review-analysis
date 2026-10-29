@@ -28,7 +28,7 @@
         <header class="panel-head">
           <div>
             <h2>Attractions by region</h2>
-            <p>Verified destinations across Belarus</p>
+            <p>Destinations across Belarus</p>
           </div>
           <button class="text-button" type="button" @click="$router.push('/map')">Open map →</button>
         </header>
@@ -36,7 +36,7 @@
         <div v-else class="region-list">
           <div v-for="region in regions.slice(0, 7)" :key="region.region" class="region-row">
             <div class="region-meta">
-              <span>{{ region.region }}</span>
+              <span>{{ formatPlace(region.region) }}</span>
               <strong>{{ region.count }}</strong>
             </div>
             <div class="bar-track">
@@ -66,8 +66,8 @@
             <span class="rank">{{ String(index + 1).padStart(2, '0') }}</span>
             <img :src="item.image_url" alt="" />
             <span class="popular-name">
-              <strong>{{ item.name }}</strong>
-              <small>{{ item.city }} · {{ item.category }}</small>
+              <strong>{{ attractionName(item) }}</strong>
+              <small>{{ formatPlace(item.city) }} · {{ formatCategory(item.category) }}</small>
             </span>
             <span class="popular-score">{{ formatNumber(item.view_count) }}</span>
           </button>
@@ -133,6 +133,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { analyticsAPI, attractionsAPI, reviewsAPI } from '@/api/client.js'
 import AttractionCard from '../components/AttractionCard.vue'
+import { attractionName, formatCategory, formatPlace } from '@/utils/displayText.js'
 
 const attractions = ref([])
 const trending = ref([])
@@ -143,7 +144,7 @@ const loading = ref(true)
 
 const formatNumber = (value) => Number(value || 0).toLocaleString('en-US')
 const metrics = computed(() => [
-  { label: 'Attractions', value: formatNumber(overview.value.attractions), note: 'verified destinations', icon: '◇', tone: 'mint' },
+  { label: 'Attractions', value: formatNumber(overview.value.attractions), note: 'destinations in the catalog', icon: '◇', tone: 'mint' },
   { label: 'Traveler reviews', value: formatNumber(overview.value.reviews), note: `${overview.value.sentiment?.positive || 0} positive`, icon: '✎', tone: 'blue' },
   { label: 'Average rating', value: `${Number(overview.value.avg_rating || 0).toFixed(1)} / 5`, note: 'across all attractions', icon: '★', tone: 'amber' },
   { label: 'Total views', value: formatNumber(overview.value.total_views), note: `${overview.value.users || 0} registered travelers`, icon: '◉', tone: 'violet' }

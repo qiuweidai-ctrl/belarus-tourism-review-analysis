@@ -112,7 +112,6 @@
               </td>
               <td>
                 <button @click="toggleFeature(a.id)" class="btn-secondary-sm">{{ a.is_featured ? 'Unfeature' : 'Feature' }}</button>
-                <button v-if="!a.is_verified" @click="verifyAttraction(a.id)" class="btn-success-sm">Verify</button>
               </td>
             </tr>
           </tbody>
@@ -327,9 +326,6 @@ const approveReview = async (id) => {
 }
 const toggleFeature = async (id) => {
   try { await adminAPI.toggleFeature(id); await loadAttractions() } catch (e) { alert('Failed') }
-}
-const verifyAttraction = async (id) => {
-  try { await adminAPI.verifyAttraction(id); await loadAttractions() } catch (e) { alert('Failed') }
 }
 const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
 const loadClusterDistribution = async () => {

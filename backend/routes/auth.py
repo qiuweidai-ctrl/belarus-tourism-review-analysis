@@ -14,7 +14,7 @@ user_repo = UserRepository()
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
-    data = request.get_json()
+    data = request.get_json() or {}
     required = ['username', 'email', 'password']
     if not data or not all(k in data for k in required):
         return jsonify({'error': 'username, email and password are required'}), 400
@@ -28,7 +28,7 @@ def register():
         username=data['username'],
         email=data['email'],
         password=data['password'],
-        role=data.get('role', 'user'),
+        role='user',
         nickname=data.get('nickname')
     )
 
@@ -42,7 +42,7 @@ def register():
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
-    data = request.get_json()
+    data = request.get_json() or {}
     if not data or not data.get('username') or not data.get('password'):
         return jsonify({'error': 'Username and password are required'}), 400
 
@@ -91,7 +91,7 @@ def login():
 
 
 @auth_bp.route('/refresh', methods=['POST'])
-@jwt_required()
+@jwt_required(refresh=True)
 def refresh():
     identity = get_jwt_identity()
     token = create_access_token(identity=identity)

@@ -97,8 +97,8 @@ purpose of every frontend page and the operations available to each role.
 |---|---|---|
 | Guest | Dashboard, attractions, map, rankings, comparison, insights, word clouds, articles, questions, and itinerary | Browse and search data, read reviews and articles, create a local itinerary, register, or log in |
 | User (`user`) | Guest pages plus recommendations, wishlist, and profile | Save attractions, create or delete personal reviews, like and comment on articles, manage personal articles, ask questions, edit the profile, and inspect login history |
-| Moderator (`moderator`) | User pages plus the administration area | Manage user roles and status, moderate reviews, feature or verify attractions, inspect login events, and run algorithm tools |
-| Administrator (`admin`) | All pages | All moderator operations plus attraction image uploads from the attraction details page |
+| Moderator (`moderator`) | User pages plus the administration area | Manage user status, moderate reviews, feature attractions, inspect login events, and run algorithm tools |
+| Administrator (`admin`) | All pages | All moderator operations plus role management and attraction image uploads from the attraction details page |
 
 Users can modify or delete only their own reviews and articles. Protected
 operations display a login prompt or return an authorization error for guests.
@@ -178,7 +178,8 @@ operations display a login prompt or return an authorization error for guests.
 - Includes rating, visitor, category, region, price, review trend, and category
   sentiment charts.
 - The `Leaderboard` switches between rating, review, view, and save metrics.
-- Attraction, review, and user data can be exported as CSV files.
+- Attraction and review data can be exported as CSV files. User exports require
+  a moderator or administrator account.
 
 #### 8. Word Clouds
 
@@ -292,11 +293,11 @@ operations display a login prompt or return an authorization error for guests.
 - Route: `/admin`
 - Access: `admin` and `moderator`
 - Summarizes users, attractions, published reviews, and pending reviews.
-- `Users` changes roles and blocks or unblocks accounts.
+- `Users` blocks or unblocks accounts. Only administrators can change roles.
 - `Reviews` filters by status, hides published reviews, and approves hidden or
   pending reviews.
-- `Attractions` displays rating, review, and view data and controls featured or
-  verified status.
+- `Attractions` displays rating, review, and view data and controls featured
+  status.
 - `Login Events` filters security and account activity by event type.
 - `AI Algorithms` retrains user clusters, inspects cluster membership, detects
   duplicate reviews, rebuilds the duplicate index, and recalculates trends.

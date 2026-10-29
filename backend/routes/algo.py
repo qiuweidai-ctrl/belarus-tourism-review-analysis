@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from services import similarity, user_clustering, text_analysis, trending, duplicate_detection
 from models import db, Attraction
+from routes.admin import require_admin
 
 algo_bp = Blueprint('algo', __name__, url_prefix='/api/algo')
 
@@ -75,7 +76,7 @@ def get_my_cluster():
 
 
 @algo_bp.route('/clustering/distribution', methods=['GET'])
-@jwt_required()
+@require_admin
 def get_cluster_distribution():
     distribution = user_clustering.get_cluster_distribution()
 
@@ -86,7 +87,7 @@ def get_cluster_distribution():
 
 
 @algo_bp.route('/clustering/<int:cluster_id>/users', methods=['GET'])
-@jwt_required()
+@require_admin
 def get_cluster_users(cluster_id):
     limit = request.args.get('limit', 20, type=int)
     offset = request.args.get('offset', 0, type=int)
@@ -100,7 +101,7 @@ def get_cluster_users(cluster_id):
 
 
 @algo_bp.route('/clustering/<int:cluster_id>/explain', methods=['GET'])
-@jwt_required()
+@require_admin
 def explain_cluster(cluster_id):
     explanation = user_clustering.explain_cluster(cluster_id)
 
@@ -111,16 +112,8 @@ def explain_cluster(cluster_id):
 
 
 @algo_bp.route('/clustering/retrain', methods=['POST'])
-@jwt_required()
+@require_admin
 def retrain_clustering():
-    from flask import current_app
-    from flask_jwt_extended import verify_jwt
-
-    try:
-        verify_jwt("admin")
-    except:
-        return jsonify({'success': False, 'message': 'Admin access required'}), 403
-
     success, message = user_clustering.train_clustering()
 
     if success:
@@ -155,7 +148,7 @@ def get_review_quality(review_id):
 
 
 @algo_bp.route('/quality/batch', methods=['POST'])
-@jwt_required()
+@require_admin
 def batch_calculate_quality():
     data = request.get_json() or {}
     review_ids = data.get('review_ids')
@@ -265,7 +258,7 @@ def check_duplicate():
 
 
 @algo_bp.route('/duplicate/pairs', methods=['GET'])
-@jwt_required()
+@require_admin
 def find_duplicate_pairs():
     min_sim = request.args.get('min_similarity', 0.8, type=float)
     limit = request.args.get('limit', 100, type=int)
@@ -279,7 +272,7 @@ def find_duplicate_pairs():
 
 
 @algo_bp.route('/duplicate/user-pattern/<int:user_id>', methods=['GET'])
-@jwt_required()
+@require_admin
 def get_user_review_pattern(user_id):
     pattern = duplicate_detection.get_user_review_pattern(user_id)
 
@@ -290,7 +283,7 @@ def get_user_review_pattern(user_id):
 
 
 @algo_bp.route('/duplicate/rebuild-index', methods=['POST'])
-@jwt_required()
+@require_admin
 def rebuild_duplicate_index():
     count = duplicate_detection.rebuild_index()
 
@@ -314,7 +307,7 @@ def get_attraction_summary(attraction_id):
 
 
 @algo_bp.route('/trending/recalculate', methods=['POST'])
-@jwt_required()
+@require_admin
 def recalculate_trending():
     attractions = Attraction.query.filter_by(is_verified=True).all()
 

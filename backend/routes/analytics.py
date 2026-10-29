@@ -2,6 +2,7 @@ from collections import Counter
 import re
 
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
 from sqlalchemy import func
 
 from models import db, Attraction, Review, User, Article, Question
@@ -346,6 +347,12 @@ def export_csv(dataset):
 
     if dataset not in EXPORT_QUERIES:
         return jsonify({'error': f"Unknown dataset '{dataset}'"}), 400
+
+    if dataset == 'users':
+        verify_jwt_in_request()
+        user = db.session.get(User, int(get_jwt_identity()))
+        if not user or user.role not in ('admin', 'moderator'):
+            return jsonify({'error': 'Admin access required'}), 403
 
     columns, model = EXPORT_QUERIES[dataset]
     rows = db.session.query(model).all()

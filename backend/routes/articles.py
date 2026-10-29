@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import Article, ArticleLike, ArticleComment, db
+from models import Article, ArticleLike, ArticleComment, User, db
 from app import db as _db
 from datetime import datetime
 
@@ -35,6 +35,7 @@ def _serialize_article(a, user_id=None):
 
 
 @articles_bp.route('', methods=['GET'])
+@jwt_required(optional=True)
 def list_articles():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
@@ -62,7 +63,8 @@ def list_articles():
         page=page, per_page=per_page, error_out=False
     )
 
-    current_user = request.args.get('current_user_id', None, type=int)
+    identity = get_jwt_identity()
+    current_user = int(identity) if identity else None
     return jsonify({
         'articles': [_serialize_article(a, current_user) for a in pagination.items],
         'total': pagination.total,
@@ -72,6 +74,7 @@ def list_articles():
 
 
 @articles_bp.route('/<int:article_id>', methods=['GET'])
+@jwt_required(optional=True)
 def get_article(article_id):
     article = Article.query.get(article_id)
     if not article or article.status != 'published':
@@ -80,12 +83,8 @@ def get_article(article_id):
     article.view_count = (article.view_count or 0) + 1
     db.session.commit()
 
-    user_id = None
-    try:
-        from flask_jwt_extended import get_jwt_identity
-        user_id = int(get_jwt_identity())
-    except Exception:
-        pass
+    identity = get_jwt_identity()
+    user_id = int(identity) if identity else None
 
     return jsonify(_serialize_article(article, user_id)), 200
 
@@ -94,7 +93,7 @@ def get_article(article_id):
 @jwt_required()
 def create_article():
     user_id = int(get_jwt_identity())
-    data = request.get_json()
+    data = request.get_json() or {}
 
     if not data.get('title') or not data.get('content'):
         return jsonify({'error': 'title and content are required'}), 400
@@ -127,8 +126,12 @@ def update_article(article_id):
     if article.user_id != user_id:
         return jsonify({'error': 'Unauthorized'}), 403
 
-    data = request.get_json()
-    for field in ['title', 'summary', 'content', 'cover_image_url', 'tags_json', 'is_published', 'is_featured']:
+    data = request.get_json() or {}
+    allowed = ['title', 'summary', 'content', 'cover_image_url', 'tags_json', 'is_published']
+    user = db.session.get(User, user_id)
+    if user and user.role == 'admin':
+        allowed.append('is_featured')
+    for field in allowed:
         if field in data:
             setattr(article, field, data[field])
     if data.get('is_published') and not article.published_at:

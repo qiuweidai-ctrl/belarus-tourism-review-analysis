@@ -101,7 +101,10 @@ def get_attraction(attraction_id):
 @jwt_required()
 def create_attraction():
     user_id = int(get_jwt_identity())
-    data = request.get_json()
+    data = request.get_json() or {}
+
+    if not data.get('name') or not data.get('location'):
+        return jsonify({'error': 'name and location are required'}), 400
 
     attraction = attraction_repo.create(
         name=data.get('name', ''),
@@ -137,13 +140,15 @@ def update_attraction(attraction_id):
     if not _can_edit_attraction(user, attraction):
         return jsonify({'error': 'Only the creator or an admin can edit this attraction'}), 403
 
-    data = request.get_json()
+    data = request.get_json() or {}
     allowed = [
         'name', 'name_en', 'description', 'short_desc', 'location',
         'city', 'region', 'latitude', 'longitude', 'category',
         'suitable_season', 'opening_hours', 'ticket_price',
-        'image_url', 'images_json', 'is_featured', 'is_verified'
+        'image_url', 'images_json'
     ]
+    if user.role == 'admin':
+        allowed.extend(['is_featured', 'is_verified'])
     for key in allowed:
         if key in data:
             setattr(attraction, key, data[key])
@@ -179,7 +184,7 @@ def upload_attraction_image(attraction_id):
             'error': f'Unsupported file type .{ext}. Allowed: {sorted(ALLOWED_IMG_EXT)}'
         }), 400
 
-    head = f.read(8)
+    head = f.read(12)
     f.seek(0)
     is_png  = head.startswith(b'\x89PNG\r\n\x1a\n')
     is_jpg  = head.startswith(b'\xff\xd8\xff')
@@ -231,7 +236,7 @@ def upload_attraction_image(attraction_id):
 def delete_attraction(attraction_id):
     user_id = int(get_jwt_identity())
     user = user_repo.get_by_id(user_id)
-    if user.role != 'admin':
+    if not user or user.role != 'admin':
         return jsonify({'error': 'Admin access required'}), 403
 
     success = attraction_repo.delete(attraction_id)
