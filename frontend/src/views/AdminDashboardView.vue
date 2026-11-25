@@ -96,16 +96,17 @@
         <div v-if="attractions.length === 0" class="empty">No attractions.</div>
         <table v-else class="admin-table">
           <thead><tr>
-            <th>ID</th><th>Name</th><th>Category</th><th>Region</th><th>Rating</th><th>Reviews</th><th>Views</th><th>Featured</th><th>Actions</th>
+            <th>ID</th><th>Name</th><th>Status</th><th>Category</th><th>Region</th><th>External rating</th><th>Platform reviews</th><th>Views</th><th>Featured</th><th>Actions</th>
           </tr></thead>
           <tbody>
             <tr v-for="a in attractions" :key="a.id">
               <td>{{ a.id }}</td>
               <td>{{ a.name }}</td>
+              <td>{{ a.catalog_status }}</td>
               <td>{{ a.category }}</td>
               <td>{{ a.region }}</td>
-              <td>{{ a.avg_rating }}</td>
-              <td>{{ a.total_reviews }}</td>
+              <td>{{ a.primary_external_rating?.normalized_score ?? '—' }} <small v-if="a.primary_external_rating">· {{ a.primary_external_rating.provider }}</small></td>
+              <td>{{ a.primary_external_rating?.review_count ?? '—' }}</td>
               <td>{{ a.view_count }}</td>
               <td>
                 <span v-if="a.is_featured" class="badge-featured">★ Featured</span>
@@ -255,6 +256,7 @@ const fetchStats = async () => {
   } catch (e) { console.error(e) }
 }
 
+// 切换管理标签时再加载对应数据。
 const loadTab = async () => {
   if (activeTab.value === 'users') await loadUsers()
   else if (activeTab.value === 'reviews') await loadReviews()

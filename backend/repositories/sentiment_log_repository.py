@@ -1,7 +1,6 @@
 from models import SentimentAnalysisLog
 from app import db
 from .base_repository import BaseRepository
-import hashlib
 
 
 class SentimentLogRepository(BaseRepository):
@@ -14,7 +13,6 @@ class SentimentLogRepository(BaseRepository):
                model='deepseek-chat', processing_time_ms=None,
                status='success', confidence=None, fallback_method=None):
         existing = self.find_by_review(review_id)
-        content_hash = hashlib.sha256(str(review_id).encode()).hexdigest()
         if existing:
             existing.sentiment_label = label
             existing.sentiment_score = score
@@ -28,7 +26,6 @@ class SentimentLogRepository(BaseRepository):
             return existing
         log = SentimentAnalysisLog(
             review_id=review_id,
-            content_hash=content_hash,
             sentiment_label=label,
             sentiment_score=score,
             raw_response=raw_response,

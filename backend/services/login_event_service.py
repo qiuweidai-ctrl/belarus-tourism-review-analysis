@@ -26,6 +26,7 @@ def _user_agent():
     return ua[:500] if ua else None
 
 
+# 记录登录和账号操作，供个人中心和管理页查看。
 def record_event(event_type, user=None, username=None, status='success', detail=None):
     try:
         valid = {e.value for e in LoginEventType}

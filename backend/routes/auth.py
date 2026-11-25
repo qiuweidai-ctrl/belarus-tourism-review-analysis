@@ -41,6 +41,7 @@ def register():
 
 
 @auth_bp.route('/login', methods=['POST'])
+# 登录成功后返回JWT，后续请求用它识别用户。
 def login():
     data = request.get_json() or {}
     if not data or not data.get('username') or not data.get('password'):
@@ -116,6 +117,9 @@ def logout():
 def my_events():
     from models import LoginEvent
     user_id = int(get_jwt_identity())
+    user = user_repo.get_by_id(user_id)
+    if not user or user.role != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
 

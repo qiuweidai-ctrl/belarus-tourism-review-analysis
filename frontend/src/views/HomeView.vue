@@ -12,7 +12,11 @@
       </div>
     </section>
 
-    <section class="metric-grid">
+    <p v-if="sectionErrors.length" class="alert alert-error">{{ sectionErrors.join(' ') }} Refresh to try again.</p>
+    <section v-if="loading.overview" class="metric-grid" aria-label="Loading site figures">
+      <div v-for="i in 4" :key="i" class="metric-card card skeleton" style="min-height: 100px"></div>
+    </section>
+    <section v-else class="metric-grid">
       <article v-for="item in metrics" :key="item.label" class="metric-card card">
         <span class="metric-icon" :class="item.tone">{{ item.icon }}</span>
         <div>
@@ -32,7 +36,7 @@
           </div>
           <button class="text-button" type="button" @click="$router.push('/map')">Open map →</button>
         </header>
-        <div v-if="loading" class="panel-loading skeleton"></div>
+        <div v-if="loading.regions" class="panel-loading skeleton"></div>
         <div v-else class="region-list">
           <div v-for="region in regions.slice(0, 7)" :key="region.region" class="region-row">
             <div class="region-meta">
@@ -49,12 +53,12 @@
       <article class="dashboard-card card">
         <header class="panel-head">
           <div>
-            <h2>Popular this season</h2>
-            <p>Most viewed places in the platform</p>
+            <h2>Site page views</h2>
+            <p>Cumulative page requests, including repeat visits — not external ratings</p>
           </div>
           <button class="text-button" type="button" @click="$router.push('/rankings')">Full ranking →</button>
         </header>
-        <div v-if="loading" class="panel-loading skeleton"></div>
+        <div v-if="loading.popular" class="panel-loading skeleton"></div>
         <div v-else class="popular-list">
           <button
             v-for="(item, index) in trending"
@@ -64,7 +68,7 @@
             @click="$router.push(`/attractions/${item.id}`)"
           >
             <span class="rank">{{ String(index + 1).padStart(2, '0') }}</span>
-            <img :src="item.image_url" alt="" />
+            <img :src="item.thumbnail_url || item.image_url" alt="" loading="lazy" decoding="async" />
             <span class="popular-name">
               <strong>{{ attractionName(item) }}</strong>
               <small>{{ formatPlace(item.city) }} · {{ formatCategory(item.category) }}</small>
@@ -94,16 +98,16 @@
         </div>
         <button class="btn btn-ghost btn-sm" @click="$router.push('/attractions')">View all</button>
       </div>
-      <div v-if="loading" class="grid grid-3">
+      <div v-if="loading.featured" class="grid grid-3">
         <div v-for="index in 3" :key="index" class="skeleton attraction-skeleton"></div>
       </div>
       <div v-else-if="!attractions.length" class="empty-state card">No attractions are available.</div>
       <div v-else class="grid grid-3">
-        <AttractionCard v-for="item in attractions.slice(0, 3)" :key="item.id" :attraction="item" />
+        <AttractionCard v-for="item in attractions.slice(0, 3)" :key="item.id" :attraction="item" eager />
       </div>
     </section>
 
-    <section>
+    <section v-if="SITE_RATINGS_ENABLED">
       <div class="section-head">
         <div>
           <h2>Recent reviews</h2>
@@ -114,7 +118,7 @@
         <article v-for="review in recentReviews" :key="review.id" class="review-card card">
           <header>
             <span class="stars">{{ '★'.repeat(review.rating) }}<i>{{ '★'.repeat(5 - review.rating) }}</i></span>
-            <span class="pill" :class="sentimentClass(review.sentiment_label)">{{ review.sentiment_label || 'neutral' }}</span>
+            <span class="pill" :class="sentimentClass(review.sentiment_label)">{{ review.sentiment_label || 'unavailable' }}</span>
           </header>
           <h3>{{ review.title || 'Traveler review' }}</h3>
           <p>{{ truncate(review.content) }}</p>
@@ -124,29 +128,33 @@
           </footer>
         </article>
       </div>
-      <div v-else-if="!loading" class="empty-state card">No reviews have been posted yet.</div>
+      <div v-else-if="!loading.reviews" class="empty-state card">No reviews have been posted yet.</div>
     </section>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { analyticsAPI, attractionsAPI, reviewsAPI } from '@/api/client.js'
 import AttractionCard from '../components/AttractionCard.vue'
 import { attractionName, formatCategory, formatPlace } from '@/utils/displayText.js'
+import { SITE_RATINGS_ENABLED } from '@/config/features.js'
 
 const attractions = ref([])
 const trending = ref([])
 const recentReviews = ref([])
 const regions = ref([])
 const overview = ref({})
-const loading = ref(true)
+const loading = reactive({ overview: true, regions: true, popular: true, featured: true, reviews: SITE_RATINGS_ENABLED })
+const sectionErrors = ref([])
 
 const formatNumber = (value) => Number(value || 0).toLocaleString('en-US')
 const metrics = computed(() => [
   { label: 'Attractions', value: formatNumber(overview.value.attractions), note: 'destinations in the catalog', icon: '◇', tone: 'mint' },
-  { label: 'Traveler reviews', value: formatNumber(overview.value.reviews), note: `${overview.value.sentiment?.positive || 0} positive`, icon: '✎', tone: 'blue' },
-  { label: 'Average rating', value: `${Number(overview.value.avg_rating || 0).toFixed(1)} / 5`, note: 'across all attractions', icon: '★', tone: 'amber' },
+  ...(SITE_RATINGS_ENABLED
+    ? [{ label: 'Traveler reviews', value: formatNumber(overview.value.reviews), note: `${overview.value.sentiment?.positive || 0} positive`, icon: '✎', tone: 'blue' }]
+    : [{ label: 'Registered users', value: formatNumber(overview.value.users), note: 'site accounts, not platform reviewers', icon: '♙', tone: 'blue' }]),
+  { label: 'External rating', value: `${Number(overview.value.external_avg_rating || 0).toFixed(1)} / 5`, note: 'platform-sourced catalog average', icon: '★', tone: 'amber' },
   { label: 'Total views', value: formatNumber(overview.value.total_views), note: `${overview.value.users || 0} registered travelers`, icon: '◉', tone: 'violet' }
 ])
 const maxRegionCount = computed(() => Math.max(...regions.value.map((item) => item.count), 1))
@@ -160,25 +168,18 @@ const quickLinks = [
 const sentimentClass = (label) => ({ positive: 'pill-success', negative: 'pill-danger', neutral: 'pill-info' }[label] || 'pill-info')
 const truncate = (text, limit = 145) => !text ? '' : text.length > limit ? `${text.slice(0, limit)}…` : text
 
-onMounted(async () => {
-  try {
-    const [featuredRes, trendingRes, reviewRes, overviewRes, regionRes] = await Promise.all([
-      attractionsAPI.list({ per_page: 6, sort: 'rating' }),
-      analyticsAPI.topAttractions({ metric: 'views', limit: 6 }),
-      reviewsAPI.list({ per_page: 6 }),
-      analyticsAPI.overview(),
-      analyticsAPI.regionDistribution()
-    ])
-    attractions.value = featuredRes.data.attractions || []
-    trending.value = trendingRes.data.items || []
-    recentReviews.value = reviewRes.data.reviews || []
-    overview.value = overviewRes.data || {}
-    regions.value = regionRes.data.regions || []
-  } catch (error) {
-    console.error('Dashboard data could not be loaded', error)
-  } finally {
-    loading.value = false
+onMounted(() => {
+  // 首页各块分别加载，某个接口慢时不挡住其他内容。
+  const load = async (key, request, apply) => {
+    try { apply((await request()).data) }
+    catch { sectionErrors.value.push(`Could not load ${key}.`) }
+    finally { loading[key] = false }
   }
+  load('featured', () => attractionsAPI.list({ per_page: 3, sort: 'rating' }), data => { attractions.value = data.attractions || [] })
+  load('popular', () => analyticsAPI.topAttractions({ metric: 'views', limit: 6 }), data => { trending.value = data.items || [] })
+  load('overview', () => analyticsAPI.overview(), data => { overview.value = data })
+  load('regions', () => analyticsAPI.regionDistribution(), data => { regions.value = data.regions || [] })
+  if (SITE_RATINGS_ENABLED) load('reviews', () => reviewsAPI.list({ per_page: 6 }), data => { recentReviews.value = data.reviews || [] })
 })
 </script>
 

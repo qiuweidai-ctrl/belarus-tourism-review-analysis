@@ -27,7 +27,7 @@
     </div>
 
     <div class="article-comments card">
-      <h3>Comments ({{ comments.length }})</h3>
+      <h3>Comments ({{ commentsTotal }})</h3>
       <div v-if="isLoggedIn" class="comment-form">
         <textarea v-model="newComment" placeholder="Write a comment..." rows="3"></textarea>
         <button @click="submitComment" class="btn-primary" :disabled="!newComment">Submit</button>
@@ -54,6 +54,7 @@ const route = useRoute()
 const router = useRouter()
 const article = ref(null)
 const comments = ref([])
+const commentsTotal = ref(0)
 const newComment = ref('')
 const isLoggedIn = computed(() => !!localStorage.getItem('token'))
 
@@ -69,6 +70,7 @@ function goBack() {
   }
 }
 
+// 按正文换行分段，保留用户输入的段落。
 const paragraphs = computed(() => {
   if (!article.value) return []
   return article.value.content.split('\n').filter(p => p.trim())
@@ -86,6 +88,8 @@ const loadComments = async () => {
   try {
     const res = await articlesAPI.comments(route.params.id)
     comments.value = res.data.comments
+    commentsTotal.value = res.data.total || 0
+    if (article.value) article.value.comment_count = commentsTotal.value
   } catch (e) { console.error(e) }
 }
 
@@ -101,7 +105,7 @@ const toggleLike = async () => {
 const submitComment = async () => {
   if (!newComment.value.trim()) return
   try {
-    await articlesAPI.addComment(route.params.id, { content: newComment.value })
+    await articlesAPI.addComment(route.params.id, { content: newComment.value.trim() })
     newComment.value = ''
     await loadComments()
   } catch (e) { alert('Failed to post comment') }
@@ -159,7 +163,7 @@ onMounted(fetchArticle)
 }
 .comment-item strong { color: #1a5e63; }
 .comment-date { color: #aaa; font-size: 0.8rem; margin-left: 0.5rem; }
-.comment-item p { margin-top: 0.3rem; color: #555; }
+.comment-item p { margin-top: 0.3rem; color: #555; overflow-wrap: anywhere; word-break: break-word; white-space: pre-wrap; }
 
 .badge-featured { background: #f5a623; color: white; padding: 0.1rem 0.5rem; border-radius: 10px; font-size: 0.75rem; }
 </style>

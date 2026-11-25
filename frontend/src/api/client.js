@@ -1,4 +1,5 @@
 import api from './index.js'
+import { loadAllPages } from '../utils/pagination.js'
 export const authAPI = {
   register(data) { return api.post('/auth/register', data) },
   login(data) { return api.post('/auth/login', data) },
@@ -19,8 +20,11 @@ export const usersAPI = {
   getProfile(userId) { return api.get(`/users/${userId}`) }
 }
 export const attractionsAPI = {
-  list(params = {}) { return api.get('/attractions', { params }) },
+  async all(params = {}) { return (await api.get('/attractions/catalog', { params })).data.attractions },
+  map() { return api.get('/attractions/map') },
+  list(params = {}, config = {}) { return api.get('/attractions', { ...config, params: { view: 'card', ...params } }) },
   get(id) { return api.get(`/attractions/${id}`) },
+  externalReviews(id, params = {}) { return api.get(`/attractions/${id}/external-reviews`, { params }) },
   create(data) { return api.post('/attractions', data) },
   update(id, data) { return api.put(`/attractions/${id}`, data) },
   delete(id) { return api.delete(`/attractions/${id}`) },
@@ -42,6 +46,7 @@ export const reviewsAPI = {
   stats(attractionId) { return api.get(`/reviews/attraction/${attractionId}/stats`) }
 }
 export const wishlistAPI = {
+  all(params = {}) { return loadAllPages((query) => api.get('/wishlist', { params: query }), 'items', params) },
   list(params = {}) { return api.get('/wishlist', { params }) },
   toggle(data) { return api.post('/wishlist/toggle', data) },
   check(attractionId) { return api.get(`/wishlist/check/${attractionId}`) },
@@ -100,7 +105,7 @@ export const analyticsAPI = {
   priceAnalysis() { return api.get('/analytics/price-analysis') },
   reviewTrend() { return api.get('/analytics/review-trend') },
   sentimentBreakdown() { return api.get('/analytics/sentiment-breakdown') },
-  topAttractions(params = {}) { return api.get('/analytics/top-attractions', { params }) },
+  topAttractions(params = {}) { return api.get('/analytics/top-attractions', { params: { view: 'card', ...params } }) },
   keywords(params = {}) { return api.get('/analytics/keywords', { params }) },
   exportCsv(dataset) { return api.get(`/analytics/export/${dataset}.csv`, { responseType: 'blob' }) }
 }

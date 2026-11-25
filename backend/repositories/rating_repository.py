@@ -6,6 +6,7 @@ from .base_repository import BaseRepository
 class RatingRepository(BaseRepository):
     model = Rating
 
+    # 同一用户对同一景点只保留一条评分。
     def upsert(self, user_id, attraction_id, score):
         existing = Rating.query.filter_by(user_id=user_id, attraction_id=attraction_id).first()
         if existing:

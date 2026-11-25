@@ -51,6 +51,7 @@ const handleLogin = async () => {
   error.value = ''
   try {
     const res = await authAPI.login(form.value)
+    // 保存登录状态，后面的接口请求会自动带上token。
     localStorage.setItem('token', res.data.access_token)
     localStorage.setItem('user', JSON.stringify(res.data.user))
     window.dispatchEvent(new Event('app:auth-changed'))

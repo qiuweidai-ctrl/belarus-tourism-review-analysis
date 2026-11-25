@@ -2,6 +2,9 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from models import db, Attraction, Review, AttractionTag, Tag
+from collections import defaultdict
+from sqlalchemy import func
+from sqlalchemy.orm import load_only, lazyload
 import pickle
 import os
 
@@ -11,7 +14,7 @@ _attraction_ids = None
 _last_update = None
 
 
-def build_attraction_text(attraction: Attraction) -> str:
+def build_attraction_text(attraction: Attraction, tags=None, reviews=None) -> str:
     texts = []
 
     if attraction.name:
@@ -32,19 +35,19 @@ def build_attraction_text(attraction: Attraction) -> str:
     if attraction.region:
         texts.append(attraction.region)
 
-    tags = [row[0] for row in (
-        db.session.query(Tag.name)
-        .join(AttractionTag, AttractionTag.tag_id == Tag.id)
-        .filter(AttractionTag.attraction_id == attraction.id)
-        .all()
-    )]
+    if tags is None:
+        tags = [row[0] for row in (
+            db.session.query(Tag.name)
+            .join(AttractionTag, AttractionTag.tag_id == Tag.id)
+            .filter(AttractionTag.attraction_id == attraction.id).all()
+        )]
     if tags:
         texts.extend(tags)
 
-    reviews = Review.query.filter_by(
-        attraction_id=attraction.id,
-        status='published'
-    ).order_by(Review.rating.desc()).limit(5).all()
+    if reviews is None:
+        reviews = Review.query.filter_by(
+            attraction_id=attraction.id, status='published', deleted_at=None
+        ).order_by(Review.rating.desc()).limit(5).all()
 
     review_texts = []
     for review in reviews:
@@ -57,10 +60,14 @@ def build_attraction_text(attraction: Attraction) -> str:
     return ' '.join(texts).strip() or f'attraction {attraction.id}'
 
 
+# 把景点介绍、标签和评价整理成TF-IDF向量。
 def rebuild_tfidf_index():
     global _tfidf_vectorizer, _attraction_vectors, _attraction_ids, _last_update
 
-    attractions = Attraction.query.filter_by(is_verified=True).all()
+    fields = ('id', 'name', 'name_en', 'description', 'short_desc', 'category', 'city', 'region')
+    attractions = Attraction.query.options(
+        load_only(*(getattr(Attraction, field) for field in fields)), lazyload(Attraction.external_ratings)
+    ).filter_by(catalog_status='active').order_by(Attraction.id).all()
 
     if not attractions:
         _tfidf_vectorizer = None
@@ -71,9 +78,24 @@ def rebuild_tfidf_index():
 
     texts = []
     _attraction_ids = []
+    tags = defaultdict(list)
+    for attraction_id, name in db.session.query(AttractionTag.attraction_id, Tag.name).join(
+        Tag, Tag.id == AttractionTag.tag_id
+    ).join(Attraction, Attraction.id == AttractionTag.attraction_id).filter(Attraction.catalog_status == 'active'):
+        tags[attraction_id].append(name)
+    ranked_reviews = db.session.query(
+        Review.attraction_id, Review.content,
+        func.row_number().over(partition_by=Review.attraction_id,
+                               order_by=(Review.rating.desc(), Review.id.asc())).label('position')
+    ).join(Attraction).filter(
+        Attraction.catalog_status == 'active', Review.status == 'published', Review.deleted_at.is_(None)
+    ).subquery()
+    reviews = defaultdict(list)
+    for row in db.session.query(ranked_reviews.c.attraction_id, ranked_reviews.c.content).filter(ranked_reviews.c.position <= 5):
+        reviews[row.attraction_id].append(row)
 
     for attraction in attractions:
-        text = build_attraction_text(attraction)
+        text = build_attraction_text(attraction, tags[attraction.id], reviews[attraction.id])
         texts.append(text)
         _attraction_ids.append(attraction.id)
 
@@ -82,7 +104,7 @@ def rebuild_tfidf_index():
         ngram_range=(1, 2),
         stop_words='english',
         min_df=1,
-        max_df=0.95
+        max_df=0.95 if len(attractions) > 1 else 1.0
     )
 
     _attraction_vectors = _tfidf_vectorizer.fit_transform(texts)
@@ -94,7 +116,7 @@ def rebuild_tfidf_index():
 def get_similar_attractions(attraction_id: int, top_k: int = 5) -> list:
     global _tfidf_vectorizer, _attraction_vectors, _attraction_ids
 
-    current_count = Attraction.query.filter_by(is_verified=True).count()
+    current_count = Attraction.query.filter_by(catalog_status='active').count()
     if (_attraction_vectors is None or
         _last_update != current_count or
         attraction_id not in _attraction_ids):
@@ -148,7 +170,7 @@ def get_personalized_recommendations(user_id: int, top_k: int = 10) -> list:
     if not interacted_ids:
         return get_trending_attractions(top_k)
 
-    current_count = Attraction.query.filter_by(is_verified=True).count()
+    current_count = Attraction.query.filter_by(catalog_status='active').count()
     if _attraction_vectors is None or _attraction_ids is None or _last_update != current_count:
         if not rebuild_tfidf_index():
             return get_trending_attractions(top_k)

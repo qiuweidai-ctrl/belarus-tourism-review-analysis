@@ -17,6 +17,7 @@ wishlist_repo = WishlistRepository()
 user_repo = UserRepository()
 sentiment_log_repo = SentimentLogRepository()
 sentiment_service = SentimentService()
+REVIEW_MAX_LENGTH = 400
 
 
 def _serialize_review(r):
@@ -66,15 +67,19 @@ def list_reviews():
 
 @reviews_bp.route('', methods=['POST'])
 @jwt_required()
+# 先检查评价内容，再保存评分和情感分析结果。
 def create_review():
     user_id = int(get_jwt_identity())
     data = request.get_json() or {}
 
-    if not data.get('content') or not data.get('attraction_id'):
+    content = str(data.get('content') or '').strip()
+    if not content or not data.get('attraction_id'):
         return jsonify({'error': 'content and attraction_id are required'}), 400
+    if len(content) > REVIEW_MAX_LENGTH:
+        return jsonify({'error': f'Review content must be {REVIEW_MAX_LENGTH} characters or fewer'}), 400
 
     attraction = attraction_repo.get_by_id(data['attraction_id'])
-    if not attraction:
+    if not attraction or attraction.catalog_status != 'active':
         return jsonify({'error': 'Attraction not found'}), 404
 
     try:
@@ -84,13 +89,13 @@ def create_review():
     if rating_score < 1 or rating_score > 5:
         return jsonify({'error': 'rating must be an integer from 1 to 5'}), 400
 
-    sentiment_result = sentiment_service.analyze(data['content'])
+    sentiment_result = sentiment_service.analyze(content)
 
     review = review_repo.create(
         user_id=user_id,
         attraction_id=data['attraction_id'],
         title=data.get('title'),
-        content=data['content'],
+        content=content,
         rating=rating_score,
         travel_type=data.get('travel_type'),
         travel_date=data.get('travel_date'),
@@ -104,16 +109,19 @@ def create_review():
 
     rating_repo.upsert(user_id, data['attraction_id'], rating_score)
 
-    sentiment_log_repo.upsert(
-        review_id=review.id,
-        label=sentiment_result['label'],
-        score=sentiment_result['score'],
-        raw_response=sentiment_result.get('raw_response'),
-        model=sentiment_result.get('model', 'deepseek-chat'),
-        processing_time_ms=sentiment_result.get('processing_time_ms'),
-        status=sentiment_result.get('status', 'success'),
-        confidence=sentiment_result.get('confidence')
-    )
+    try:
+        sentiment_log_repo.upsert(
+            review_id=review.id,
+            label=sentiment_result['label'],
+            score=sentiment_result['score'],
+            raw_response=sentiment_result.get('raw_response'),
+            model=sentiment_result.get('model', 'deepseek-chat'),
+            processing_time_ms=sentiment_result.get('processing_time_ms'),
+            status=sentiment_result.get('status', 'success'),
+            confidence=sentiment_result.get('confidence')
+        )
+    except Exception:
+        db.session.rollback()
 
     _update_attraction_stats(data['attraction_id'])
 

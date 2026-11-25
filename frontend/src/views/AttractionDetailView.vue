@@ -47,18 +47,59 @@
           </button>
         </div>
         <p class="location">{{ formatPlace(attraction.location) }}</p>
+        <p v-if="attraction.name_original" class="source-date">
+          Original name: {{ attraction.name_original }} · Display name is a Latin transliteration.
+        </p>
         <div class="stats">
-          <span class="rating">{{ $t('attractions.rating') }}: {{ attraction.avg_rating }} / 5</span>
-          <span class="review-count">{{ attraction.review_count }} {{ $t('attractions.reviews') }}</span>
+          <span class="rating">External rating: {{ formatExternalRating(attraction) }}</span>
+          <a
+            v-if="externalSourceUrl(attraction)"
+            class="review-count"
+            :href="externalSourceUrl(attraction)"
+            target="_blank"
+            rel="noopener noreferrer"
+          >{{ externalProvider(attraction) }} · {{ externalReviewCount(attraction) }} {{ externalCountLabel(attraction) }}</a>
         </div>
+        <p v-if="SITE_RATINGS_ENABLED" class="local-rating">
+          Site rating:
+          <strong v-if="attraction.local_rating?.score != null">{{ attraction.local_rating.score }} / 5 · {{ attraction.local_rating.review_count }} reviews</strong>
+          <strong v-else>Unavailable (no site reviews yet)</strong>
+        </p>
         <p class="description">{{ attraction.description }}</p>
 
-        <div v-if="aiSummary" class="ai-summary card">
+        <div v-if="attraction.source_url" class="source-panel card">
+          <h3>Data sources</h3>
+          <p>
+            <a :href="attraction.source_url" target="_blank" rel="noopener noreferrer">
+              {{ attraction.source_name || 'Attraction record' }}
+            </a>
+            <span v-if="attraction.source_license"> · {{ attraction.source_license }}</span>
+          </p>
+          <p v-if="attraction.description_source_url">
+            <a :href="attraction.description_source_url" target="_blank" rel="noopener noreferrer">Description source</a>
+            <span v-if="attraction.description_license"> · {{ attraction.description_license }}</span>
+          </p>
+          <p v-if="attraction.image_source_url">
+            <a :href="attraction.image_source_url" target="_blank" rel="noopener noreferrer">Image source</a>
+            <span v-if="attraction.image_author"> · {{ attraction.image_author }}</span>
+            <span v-if="attraction.image_license"> · {{ attraction.image_license }}</span>
+          </p>
+          <p v-if="attraction.source_retrieved_at" class="source-date">Retrieved {{ formatDate(attraction.source_retrieved_at) }}</p>
+          <div v-if="attraction.external_ratings?.length" class="external-sources">
+            <h4>Platform ratings</h4>
+            <p v-for="source in attraction.external_ratings" :key="source.provider + source.provider_poi_id">
+              <a :href="source.source_url" target="_blank" rel="noopener noreferrer">{{ source.provider }}</a>
+              · {{ source.score }} / {{ source.scale }} · {{ source.review_count }} {{ source.count_kind === 'rating_votes' ? 'ratings' : 'reviews' }}
+            </p>
+          </div>
+        </div>
+
+        <div v-if="SITE_RATINGS_ENABLED && aiSummary" class="ai-summary card">
           <h3>🤖 AI Generated Summary</h3>
           <p>{{ aiSummary }}</p>
         </div>
 
-        <div class="sentiment-summary" v-if="attraction.sentiment_score !== 0">
+        <div class="sentiment-summary" v-if="SITE_RATINGS_ENABLED && attraction.sentiment_score != null">
           <h3>{{ $t('attractionDetail.sentiment') }}</h3>
           <div class="sentiment-bar">
             <div class="sentiment-fill" :style="{ width: sentimentPercent + '%', background: sentimentColor }"></div>
@@ -74,13 +115,14 @@
           </p>
         </div>
 
-        <div v-if="isLoggedIn && predictedRating !== null" class="predicted-rating">
+        <div v-if="SITE_RATINGS_ENABLED && isLoggedIn && predictedRating !== null" class="predicted-rating">
           <h3>{{ $t('attractionDetail.predictedRating') }}</h3>
           <p class="pred-score">{{ predictedRating }} / 5</p>
-          <p v-if="predictReason" class="pred-reason">{{ predictReason }}</p>
         </div>
       </div>
     </div>
+
+    <ExternalReviews :attraction="attraction" />
 
     <div v-if="similarAttractions.length > 0" class="similar-attractions">
       <h2>✨ Similar Attractions (TF-IDF)</h2>
@@ -91,13 +133,14 @@
           class="similar-card card"
           @click="goToAttraction(item.attraction_id)"
         >
-          <div v-if="item.image_url" class="similar-img" :style="{ backgroundImage: `url(${item.image_url})` }"></div>
+          <div v-if="item.image_url" class="similar-img"><img class="thumbnail-image" :src="item.thumbnail_url || item.image_url" :alt="item.name" loading="lazy" decoding="async" /></div>
           <div v-else class="similar-img placeholder"></div>
           <div class="similar-info">
             <h4>{{ item.name }}</h4>
             <p class="similar-location">{{ formatPlace(item.location) }}</p>
             <div class="similar-meta">
-              <span class="rating">★ {{ item.avg_rating }}</span>
+              <span class="rating">{{ formatExternalRating(item) }}</span>
+              <ExternalRatingSource :attraction="item" :show-score="false" />
               <span class="similarity-badge">{{ item.similarity }}% match</span>
             </div>
           </div>
@@ -105,7 +148,7 @@
       </div>
     </div>
 
-    <div v-if="topQualityReviews.length > 0" class="top-reviews-section">
+    <div v-if="SITE_RATINGS_ENABLED && topQualityReviews.length > 0" class="top-reviews-section">
       <h2>🏆 Top Quality Reviews</h2>
       <div class="reviews-list">
         <div v-for="item in topQualityReviews" :key="item.review_id" class="review-card card highlight">
@@ -127,11 +170,12 @@
       </div>
     </div>
 
-    <div class="detail-section">
+    <div v-if="SITE_RATINGS_ENABLED" class="detail-section">
       <h2>{{ $t('attractionDetail.reviews') }}</h2>
 
       <div v-if="isLoggedIn" class="review-form card">
         <h3>{{ $t('attractionDetail.writeReview') }}</h3>
+        <p v-if="reviewError" class="review-error">{{ reviewError }}</p>
         <div v-if="duplicateWarning" class="duplicate-warning">
           <span class="warning-icon">⚠️</span>
           <span>{{ duplicateWarning }}</span>
@@ -151,11 +195,15 @@
           v-model="newReview.content"
           :placeholder="$t('attractionDetail.contentPlaceholder')"
           rows="4"
+          maxlength="400"
           @blur="checkDuplicate"
         ></textarea>
-        <button @click="submitReview" :disabled="!newReview.content || submitting" class="btn-primary">
-          {{ submitting ? $t('common.loading') : $t('attractionDetail.submit') }}
-        </button>
+        <div class="review-form-footer">
+          <span class="character-count">{{ newReview.content.length }} / 400</span>
+          <button @click="submitReview" :disabled="!newReview.content.trim() || submitting" class="btn-primary">
+            {{ submitting ? $t('common.loading') : $t('attractionDetail.submit') }}
+          </button>
+        </div>
       </div>
       <div v-else class="login-prompt">
         <p>{{ $t('attractionDetail.loginRequired') }}</p>
@@ -193,6 +241,10 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { attractionsAPI, reviewsAPI, recommendationsAPI, wishlistAPI, algoAPI } from '@/api/client.js'
 import { attractionName, formatPlace } from '@/utils/displayText.js'
+import ExternalRatingSource from '../components/ExternalRatingSource.vue'
+import ExternalReviews from '../components/ExternalReviews.vue'
+import { externalCountLabel, externalProvider, externalReviewCount, externalSourceUrl, formatExternalRating } from '@/utils/ratings.js'
+import { SITE_RATINGS_ENABLED } from '@/config/features.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -205,6 +257,7 @@ const similarAttractions = ref([])
 const topQualityReviews = ref([])
 const aiSummary = ref('')
 const duplicateWarning = ref('')
+const reviewError = ref('')
 let duplicateCheckTimer = null
 
 function goBack() {
@@ -223,7 +276,6 @@ const currentUserId = ref(parseInt(localStorage.getItem('user') ? JSON.parse(loc
 
 const newReview = ref({ content: '', rating: 5 })
 const predictedRating = ref(null)
-const predictReason = ref('')
 const wishlisted = ref(false)
 const imageFileInput = ref(null)
 const imageUploading = ref(false)
@@ -329,18 +381,21 @@ const fetchData = async () => {
     const id = route.params.id
     const [aRes, rRes] = await Promise.all([
       attractionsAPI.get(id),
-      reviewsAPI.list({ attraction_id: id, per_page: 50 })
+      SITE_RATINGS_ENABLED
+        ? reviewsAPI.list({ attraction_id: id, per_page: 50 })
+        : Promise.resolve({ data: { reviews: [] } })
     ])
     attraction.value = aRes.data
     reviews.value = rRes.data.reviews
 
     if (isLoggedIn.value) {
-      try {
-        const predRes = await recommendationsAPI.predictRating({ attraction_id: parseInt(id) })
-        predictedRating.value = predRes.data.predicted_rating
-        predictReason.value = predRes.data.reason || ''
-      } catch (e) {
-        console.error('Prediction failed', e)
+      if (SITE_RATINGS_ENABLED) {
+        try {
+          const predRes = await recommendationsAPI.predictRating({ attraction_id: parseInt(id) })
+          predictedRating.value = predRes.data.predicted_rating
+        } catch (e) {
+          console.error('Prediction failed', e)
+        }
       }
       try {
         const wlRes = await wishlistAPI.check(id)
@@ -361,6 +416,7 @@ const fetchAlgoData = async () => {
   } catch (e) {
     console.error('Similar attractions fetch failed', e)
   }
+  if (!SITE_RATINGS_ENABLED) return
   try {
     const qualRes = await algoAPI.getTopQualityReviews(id, { limit: 3 })
     topQualityReviews.value = qualRes.data.data || []
@@ -411,18 +467,21 @@ const loadAttractionPage = async () => {
   topQualityReviews.value = []
   aiSummary.value = ''
   predictedRating.value = null
-  predictReason.value = ''
   wishlisted.value = false
   await Promise.all([fetchData(), fetchAlgoData()])
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 const submitReview = async () => {
+  if (!SITE_RATINGS_ENABLED) return
+  const content = newReview.value.content.trim()
+  if (!content || content.length > 400) return
+  reviewError.value = ''
   submitting.value = true
   try {
     await reviewsAPI.create({
       attraction_id: parseInt(route.params.id),
-      content: newReview.value.content,
+      content,
       rating: newReview.value.rating
     })
     newReview.value.content = ''
@@ -431,7 +490,7 @@ const submitReview = async () => {
     await fetchData()
     await fetchAlgoData()
   } catch (e) {
-    alert('Failed to submit review')
+    reviewError.value = e.response?.data?.error || 'Unable to publish the review. Please try again.'
   } finally {
     submitting.value = false
   }
@@ -571,6 +630,12 @@ onMounted(loadAttractionPage)
   margin-bottom: 1.5rem;
 }
 
+.source-panel { margin-top: 1rem; padding: 1rem 1.15rem; }
+.source-panel h3 { margin: 0 0 .55rem; font-size: .95rem; }
+.source-panel p { margin: .25rem 0; overflow-wrap: anywhere; }
+.source-panel a { color: var(--brand-600); font-weight: 650; }
+.source-date { color: var(--text-muted); font-size: .82rem; }
+
 .sentiment-summary h3, .predicted-rating h3 {
   font-size: 1rem;
   color: #1a5e63;
@@ -610,12 +675,6 @@ onMounted(loadAttractionPage)
   font-weight: bold;
 }
 
-.pred-reason {
-  font-size: 0.9rem;
-  color: #666;
-  margin-top: 0.3rem;
-}
-
 .detail-section h2 {
   color: #1a5e63;
   margin-bottom: 1.2rem;
@@ -623,6 +682,18 @@ onMounted(loadAttractionPage)
 
 .review-form {
   margin-bottom: 2rem;
+  padding: 1.35rem 1.5rem;
+  border-radius: 12px;
+}
+.review-form h3 { margin: 0 0 1rem; }
+.review-error {
+  margin: 0 0 1rem;
+  padding: .7rem .85rem;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: .88rem;
 }
 
 .rating-input {
@@ -649,9 +720,11 @@ onMounted(loadAttractionPage)
 }
 
 .review-form textarea {
-  margin-bottom: 1rem;
+  margin-bottom: .4rem;
   resize: vertical;
 }
+.review-form-footer { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.character-count { color: var(--text-mute); font-size: .82rem; }
 
 .login-prompt {
   text-align: center;
@@ -669,7 +742,9 @@ onMounted(loadAttractionPage)
 
 .review-card {
   padding: 1rem 1.2rem;
+  min-width: 0;
 }
+.review-card p { overflow-wrap: anywhere; word-break: break-word; white-space: pre-wrap; }
 
 .review-top {
   display: flex;
@@ -721,6 +796,8 @@ onMounted(loadAttractionPage)
   background: linear-gradient(135deg, #f8f9fa, #e9ecef);
   border-left: 4px solid #6c5ce7;
   margin-bottom: 1rem;
+  padding: 1rem 1.15rem;
+  border-radius: 10px;
 }
 .ai-summary h3 {
   font-size: 0.95rem;

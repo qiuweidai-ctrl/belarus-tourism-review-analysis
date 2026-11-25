@@ -1,4 +1,3 @@
-
 import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
@@ -95,6 +94,7 @@ def build_user_feature_matrix(user_ids: list = None) -> tuple:
     return np.array(features_list), valid_user_ids
 
 
+# 先标准化用户特征，再做KMeans聚类。
 def train_clustering():
     global _cluster_model, _scaler, _last_clustering_time
 

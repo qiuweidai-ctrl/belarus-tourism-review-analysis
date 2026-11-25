@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from repositories import WishlistRepository, AttractionRepository
+from services.attraction_presenter import serialize_attraction
 
 wishlist_bp = Blueprint('wishlist', __name__)
 
@@ -10,19 +11,16 @@ attraction_repo = AttractionRepository()
 
 def _serialize_wishlist_item(item):
     a = item.attraction
-    return {
+    data = serialize_attraction(a)
+    data.update({
         'id': item.id,
         'attraction_id': a.id,
-        'name': a.name,
-        'location': a.location,
-        'category': a.category,
-        'image_url': a.image_url,
-        'avg_rating': round(float(a.avg_rating or 0), 2),
         'note': item.note,
         'priority': item.priority,
         'visited': bool(item.visited),
         'created_at': item.created_at.isoformat() if item.created_at else None
-    }
+    })
+    return data
 
 
 @wishlist_bp.route('', methods=['GET'])
@@ -36,7 +34,8 @@ def get_wishlist():
     pagination = wishlist_repo.get_user_wishlist(user_id, visited=visited, page=page, per_page=per_page)
 
     return jsonify({
-        'items': [_serialize_wishlist_item(item) for item in pagination.items],
+        'items': [_serialize_wishlist_item(item) for item in pagination.items
+                  if item.attraction and item.attraction.catalog_status == 'active'],
         'total': pagination.total,
         'pages': pagination.pages,
         'current_page': page
@@ -53,7 +52,7 @@ def toggle_wishlist():
         return jsonify({'error': 'attraction_id is required'}), 400
 
     attraction = attraction_repo.get_by_id(attraction_id)
-    if not attraction:
+    if not attraction or attraction.catalog_status != 'active':
         return jsonify({'error': 'Attraction not found'}), 404
 
     item, is_new = wishlist_repo.toggle(

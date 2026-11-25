@@ -1,23 +1,23 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-import AttractionsView from '../views/AttractionsView.vue'
-import AttractionDetailView from '../views/AttractionDetailView.vue'
-import LoginView from '../views/LoginView.vue'
-import RegisterView from '../views/RegisterView.vue'
-import RecommendationsView from '../views/RecommendationsView.vue'
-import ProfileView from '../views/ProfileView.vue'
-import ArticlesView from '../views/ArticlesView.vue'
-import ArticleDetailView from '../views/ArticleDetailView.vue'
-import ArticleWriteView from '../views/ArticleWriteView.vue'
-import QandAView from '../views/QandAView.vue'
-import AdminDashboardView from '../views/AdminDashboardView.vue'
-import InsightsView from '../views/InsightsView.vue'
-import WordCloudView from '../views/WordCloudView.vue'
-import RankingsView from '../views/RankingsView.vue'
-import MapView from '../views/MapView.vue'
-import CompareView from '../views/CompareView.vue'
-import ItineraryView from '../views/ItineraryView.vue'
-import WishlistView from '../views/WishlistView.vue'
+const HomeView = () => import('../views/HomeView.vue')
+const AttractionsView = () => import('../views/AttractionsView.vue')
+const AttractionDetailView = () => import('../views/AttractionDetailView.vue')
+const LoginView = () => import('../views/LoginView.vue')
+const RegisterView = () => import('../views/RegisterView.vue')
+const RecommendationsView = () => import('../views/RecommendationsView.vue')
+const ProfileView = () => import('../views/ProfileView.vue')
+const ArticlesView = () => import('../views/ArticlesView.vue')
+const ArticleDetailView = () => import('../views/ArticleDetailView.vue')
+const ArticleWriteView = () => import('../views/ArticleWriteView.vue')
+const QandAView = () => import('../views/QandAView.vue')
+const AdminDashboardView = () => import('../views/AdminDashboardView.vue')
+const InsightsView = () => import('../views/InsightsView.vue')
+const WordCloudView = () => import('../views/WordCloudView.vue')
+const RankingsView = () => import('../views/RankingsView.vue')
+const MapView = () => import('../views/MapView.vue')
+const CompareView = () => import('../views/CompareView.vue')
+const ItineraryView = () => import('../views/ItineraryView.vue')
+const WishlistView = () => import('../views/WishlistView.vue')
 
 const routes = [
   { path: '/', name: 'home', component: HomeView },
@@ -61,6 +61,7 @@ const router = createRouter({
 })
 const referrerByRoute = new Map()
 
+// 前端控制页面入口，实际权限仍由后端检查。
 router.beforeEach((to, from, next) => {
   if (from && from.params && from.params.id) {
     referrerByRoute.delete(from.fullPath)

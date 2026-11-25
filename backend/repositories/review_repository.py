@@ -50,6 +50,7 @@ class ReviewRepository(BaseRepository):
             'neg_count': int(result.neg_count or 0)
         }
 
+    # 保留评价记录，用状态控制是否显示。
     def soft_delete(self, review_id):
         review = self.get_by_id(review_id)
         if review:

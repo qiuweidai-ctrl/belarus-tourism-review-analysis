@@ -7,6 +7,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash
 from models import db, User
 from repositories import UserRepository
+from services import record_event
 
 users_bp = Blueprint('users', __name__)
 user_repo = UserRepository()
@@ -64,19 +65,27 @@ def update_me():
 
     data = request.get_json() or {}
 
+    password_changed = False
     if data.get('new_password'):
         if not data.get('current_password'):
             return jsonify({'error': 'current_password is required'}), 400
+        if len(str(data['new_password'])) < 6:
+            return jsonify({'error': 'New password must be at least 6 characters'}), 400
         from werkzeug.security import check_password_hash
         if not check_password_hash(user.password_hash, data['current_password']):
             return jsonify({'error': 'Current password is incorrect'}), 400
         user.password_hash = generate_password_hash(data['new_password'])
+        password_changed = True
 
-    for field in ['nickname', 'avatar_url', 'bio']:
+    for field in ['nickname', 'bio']:
         if field in data:
             setattr(user, field, data[field])
+    if user.role == 'admin' and 'avatar_url' in data:
+        user.avatar_url = data['avatar_url']
 
     db.session.commit()
+    if password_changed:
+        record_event('password_changed', user=user, detail='Password changed from profile')
     return jsonify({'message': 'Profile updated'}), 200
 
 
@@ -110,7 +119,7 @@ def upload_avatar():
     is_png  = _looks_like(head_bytes, b'\x89PNG\r\n\x1a\n')
     is_jpg  = head_bytes.startswith(b'\xff\xd8\xff')
     is_gif  = head_bytes.startswith(b'GIF8')
-    is_webp = head_bytes[:4] == b'RIFF' and head_bytes[8:12] == b'WEBP'
+    is_webp = head[:4] == b'RIFF' and head[8:12] == b'WEBP'
     if not (is_png or is_jpg or is_gif or is_webp):
         return jsonify({'error': 'File content does not look like a valid image'}), 400
 

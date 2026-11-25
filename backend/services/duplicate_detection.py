@@ -1,9 +1,7 @@
-
 from datasketch import MinHash, MinHashLSH
 from models import db, Review
 import re
 from datetime import datetime
-import hashlib
 
 SIMILARITY_THRESHOLD = 0.7
 
@@ -63,6 +61,7 @@ def build_lsh_index():
     return len(_review_minhashes)
 
 
+# 先找候选评价，再比较相似度。
 def check_duplicate(content: str, exclude_review_id: int = None) -> dict:
     global _lsh_index, _review_minhashes
 

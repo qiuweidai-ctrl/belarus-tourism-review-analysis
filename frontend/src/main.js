@@ -5,6 +5,7 @@ import App from './App.vue'
 import router from './router'
 import en from './i18n/en.js'
 import './styles/theme.css'
+// 先恢复上次的主题，再挂载页面。
 const savedTheme = localStorage.getItem('theme')
 if (savedTheme === 'dark') {
   document.documentElement.setAttribute('data-theme', 'dark')

@@ -27,7 +27,7 @@
     <template v-else>
       <section v-if="items.length" class="grid grid-4 stats fade-up">
         <StatCard label="Saved" :value="items.length" icon="♥" color="var(--danger)" />
-        <StatCard label="Estimated total" :value="totalPrice" :decimals="2" icon="🎟️" color="var(--brand-600)" suffix=" BYN" />
+        <StatCard v-if="allPricesKnown" label="Estimated total" :value="totalPrice" :decimals="2" icon="🎟️" color="var(--brand-600)" suffix=" BYN" />
         <StatCard label="Average rating" :value="avgRating" :decimals="2" icon="⭐" color="var(--accent-600)" suffix=" / 5" />
         <StatCard label="Visited" :value="visitedCount" icon="✅" color="var(--success)" />
       </section>
@@ -49,7 +49,8 @@
 
       <section v-else class="grid grid-3 fade-up">
         <article v-for="w in pageItems" :key="w.attraction_id || w.id" class="card card-hover wcard">
-          <div class="wimg" :style="imgStyle(w)">
+          <div class="wimg">
+            <img v-if="w.image_url" class="thumbnail-image" :src="w.thumbnail_url || w.image_url" :alt="w.name" loading="lazy" decoding="async" />
             <span v-if="w.is_featured" class="badge">★ Featured</span>
             <span v-if="w.visited" class="badge visited">✓ Visited</span>
           </div>
@@ -57,16 +58,15 @@
             <h3>{{ w.name }}</h3>
             <p class="loc">{{ w.city || w.region || '—' }}</p>
             <p class="rate">
-              <span class="stars">{{ stars(w.avg_rating) }}</span>
-              <strong>{{ Number(w.avg_rating).toFixed(1) }}</strong>
-              <em>· {{ w.total_reviews }} reviews</em>
+              <strong>{{ formatExternalRating(w) }}</strong>
+              <ExternalRatingSource :attraction="w" :show-score="false" />
             </p>
             <p v-if="w.note" class="note">"{{ w.note }}"</p>
             <div class="row foot">
               <span class="pill">{{ cap(w.category) }}</span>
               <span class="spacer"></span>
-              <span class="price" :class="{ free: !w.ticket_price }">
-                {{ w.ticket_price ? w.ticket_price.toFixed(2) + ' BYN' : 'Free' }}
+              <span v-if="w.ticket_price != null" class="price" :class="{ free: w.ticket_price === 0 }">
+                {{ priceLabel(w.ticket_price) }}
               </span>
             </div>
             <div class="row actions">
@@ -99,6 +99,8 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { wishlistAPI } from '@/api/client.js'
 import StatCard from '../components/StatCard.vue'
 import EmptyState from '../components/EmptyState.vue'
+import ExternalRatingSource from '../components/ExternalRatingSource.vue'
+import { externalProvider, externalReviewCount, externalScore, formatExternalRating } from '@/utils/ratings.js'
 
 const items = ref([])
 const loading = ref(false)
@@ -109,10 +111,11 @@ const perPage = 24
 
 const isLoggedIn = ref(!!localStorage.getItem('token'))
 
+// 先按选中的方式排序，再截取当前页。
 const sorted = computed(() => {
   const list = [...items.value]
   switch (sort.value) {
-    case 'rating': return list.sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0))
+    case 'rating': return list.sort((a, b) => (externalScore(b) || 0) - (externalScore(a) || 0))
     case 'priceLow': return list.sort((a, b) => (a.ticket_price || Infinity) - (b.ticket_price || Infinity))
     case 'priceHigh': return list.sort((a, b) => (b.ticket_price || -1) - (a.ticket_price || -1))
     default: return list
@@ -124,27 +127,21 @@ const pageItems = computed(() => {
   return sorted.value.slice(start, start + perPage)
 })
 const totalPrice = computed(() => items.value.reduce((s, w) => s + (w.ticket_price || 0), 0).toFixed(2))
+const allPricesKnown = computed(() => items.value.every((w) => w.ticket_price != null))
 const avgRating = computed(() => {
   if (!items.value.length) return 0
-  return (items.value.reduce((s, w) => s + (w.avg_rating || 0), 0) / items.value.length)
+  return (items.value.reduce((s, w) => s + (externalScore(w) || 0), 0) / items.value.length)
 })
 const visitedCount = computed(() => items.value.filter((w) => w.visited).length)
 
-const stars = (r) => {
-  const full = Math.round(r || 0)
-  return '★'.repeat(full) + '☆'.repeat(5 - full)
-}
 const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '—'
-const imgStyle = (w) => w.image_url
-  ? { backgroundImage: `url(${w.image_url})` }
-  : { background: 'var(--grad-brand)' }
-
+const priceLabel = (price) => price === 0 ? 'Free' : `${price.toFixed(2)} BYN`
 const load = async () => {
   if (!isLoggedIn.value) return
   loading.value = true; error.value = ''
   try {
-    const res = await wishlistAPI.list({ per_page: 200 })
-    items.value = (res.data.wishlist || []).map((w) => ({ ...w, attraction_id: w.attraction_id || w.id }))
+    const saved = await wishlistAPI.all()
+    items.value = saved.map((w) => ({ ...w, attraction_id: w.attraction_id || w.id }))
   } catch (e) {
     if (e.response && e.response.status === 401) { isLoggedIn.value = false; return }
     error.value = 'Could not load your wishlist.'

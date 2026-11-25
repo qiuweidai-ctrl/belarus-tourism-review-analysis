@@ -75,6 +75,7 @@ const palette = () => [
   '#14b8a6'
 ]
 
+// 图表颜色跟随当前页面主题。
 const buildOption = () => {
   const base = props.option || {}
   const textSoft = cssVar('--text-soft', '#475569')

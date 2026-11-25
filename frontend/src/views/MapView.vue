@@ -25,6 +25,7 @@
       <StatCard label="Average rating" :value="avgRating" :decimals="2" icon="⭐" color="var(--success)" suffix=" / 5" />
     </section>
 
+    <p v-if="error" class="alert alert-error">{{ error }}</p>
     <div class="map-wrap card">
       <div ref="mapEl" class="map"></div>
       <aside class="sidepanel">
@@ -34,21 +35,24 @@
         </div>
         <div v-if="loading" class="empty-state"><div class="spinner"></div><span>Loading…</span></div>
         <div v-else-if="mapped.length === 0" class="empty-state">No markers for that filter.</div>
-        <ul v-else class="cards">
+        <ul v-else ref="listEl" class="cards" @scroll.passive="scrollTop = $event.target.scrollTop">
+          <li v-if="windowStart" aria-hidden="true" class="list-spacer" :style="{ height: windowStart * rowHeight + 'px' }"></li>
           <li
-            v-for="a in mapped"
+            v-for="a in visibleAttractions"
             :key="a.id"
             class="mini"
             :class="{ active: activeId === a.id }"
             @click="focus(a)"
           >
-            <div class="thumb" :style="imgStyle(a)"><span v-if="!a.image_url" class="ph">🏛️</span></div>
+            <div class="thumb"><img v-if="a.image_url" class="thumbnail-image" :src="a.thumbnail_url || a.image_url" :alt="a.name" loading="lazy" decoding="async" /><span v-else class="ph">🏛️</span></div>
             <div class="meta">
               <strong>{{ a.name }}</strong>
               <em>{{ a.city || a.region || '—' }} · {{ cap(a.category) }}</em>
-              <span class="r"><span class="stars">{{ stars(a.avg_rating) }}</span> {{ Number(a.avg_rating || 0).toFixed(1) }}</span>
+              <span class="r">{{ formatExternalRating(a) }}</span>
+              <ExternalRatingSource :attraction="a" :show-score="false" />
             </div>
           </li>
+          <li v-if="windowEnd < mapped.length" aria-hidden="true" class="list-spacer" :style="{ height: (mapped.length - windowEnd) * rowHeight + 'px' }"></li>
         </ul>
       </aside>
     </div>
@@ -61,6 +65,9 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { attractionsAPI } from '@/api/client.js'
 import StatCard from '../components/StatCard.vue'
+import ExternalRatingSource from '../components/ExternalRatingSource.vue'
+import { externalProvider, externalScore, formatExternalRating } from '@/utils/ratings.js'
+import { virtualWindow } from '@/utils/virtualList.js'
 
 const all = ref([])
 const categories = ref([])
@@ -69,6 +76,14 @@ const category = ref('')
 const mode = ref('markers')
 const activeId = ref(null)
 const loading = ref(true)
+const error = ref('')
+const listEl = ref(null)
+const scrollTop = ref(0)
+const rowHeight = 112
+const listWindow = computed(() => virtualWindow(mapped.value, scrollTop.value, rowHeight))
+const windowStart = computed(() => listWindow.value.start)
+const windowEnd = computed(() => listWindow.value.end)
+const visibleAttractions = computed(() => listWindow.value.items)
 
 const mapEl = ref(null)
 let map = null
@@ -78,15 +93,7 @@ let tileLayer = null
 
 const isDark = ref(document.documentElement.getAttribute('data-theme') === 'dark')
 
-const stars = (r) => {
-  const full = Math.round(r || 0)
-  return '★'.repeat(full) + '☆'.repeat(5 - full)
-}
 const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '—'
-const imgStyle = (a) => a.image_url
-  ? { backgroundImage: `url(${a.image_url})` }
-  : { background: 'var(--grad-brand)' }
-
 const palette = ['#0c7663', '#0d9478', '#14b893', '#34d3ac', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899']
 
 const mapped = computed(() => {
@@ -101,15 +108,15 @@ const mapped = computed(() => {
 const cities = computed(() => [...new Set(mapped.value.map((a) => a.city).filter(Boolean))])
 const avgRating = computed(() => {
   if (!mapped.value.length) return 0
-  return mapped.value.reduce((s, a) => s + (a.avg_rating || 0), 0) / mapped.value.length
+  return mapped.value.reduce((s, a) => s + (externalScore(a) || 0), 0) / mapped.value.length
 })
 
 const tileUrl = () => isDark.value
   ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-  : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+  : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
 const tileAttr = () => isDark.value
-  ? '&copy; OpenStreetMap contributors &copy; CARTO'
-  : '&copy; OpenStreetMap contributors'
+  ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> &copy; <a href="https://carto.com/attribution/">CARTO</a>'
+  : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
 
 const drawMarkers = () => {
   if (!map) return
@@ -124,7 +131,7 @@ const drawMarkers = () => {
       fillColor: color, color: '#fff', weight: 2, opacity: 1, fillOpacity: .9
     })
     dot.bindTooltip(a.name, { direction: 'top', offset: [0, -6] })
-    dot.bindPopup(`<strong>${a.name}</strong><br/>${a.city || a.region || ''}<br/>${Number(a.avg_rating || 0).toFixed(2)} / 5`)
+    dot.bindPopup(`<strong>${a.name}</strong><br/>${a.city || a.region || ''}<br/>${formatExternalRating(a)} · ${externalProvider(a)}`)
     dot.on('click', () => { activeId.value = a.id })
     markerLayer.addLayer(dot)
   })
@@ -137,7 +144,7 @@ const drawHeat = () => {
   if (mode.value !== 'heat') return
   heatLayer = L.layerGroup().addTo(map)
   mapped.value.forEach((a) => {
-    const r = Number(a.avg_rating || 0)
+    const r = Number(externalScore(a) || 0)
     const radius = 8 + (r / 5) * 28
     const dot = L.circleMarker([a.latitude, a.longitude], {
       radius,
@@ -158,7 +165,23 @@ const applyTiles = () => {
     subdomains: 'abc',
     maxZoom: 19,
     attribution: tileAttr()
-  }).addTo(map)
+  })
+  const createTile = tileLayer.createTile
+  // 主瓦片加载失败时，换备用地图源。
+  tileLayer.createTile = function (coords, done) {
+    const tile = createTile.call(this, coords, done)
+    tile.loading = 'lazy'
+    tile.decoding = 'async'
+    return tile
+  }
+  tileLayer.on('tileerror', ({ tile, coords }) => {
+    if (tile.dataset.fallback) return
+    tile.dataset.fallback = '1'
+    const style = isDark.value ? 'dark_all' : 'light_all'
+    tile.src = `https://a.basemaps.cartocdn.com/${style}/${coords.z}/${coords.x}/${coords.y}.png`
+    map?.attributionControl.addAttribution('&copy; <a href="https://carto.com/attribution/">CARTO</a>')
+  })
+  tileLayer.addTo(map)
 }
 
 const render = () => {
@@ -179,7 +202,7 @@ const focus = (a) => {
 const initMap = async () => {
   await nextTick()
   if (!mapEl.value) return
-  map = L.map(mapEl.value, { zoomControl: true }).setView([53.9, 27.6], 7)
+  map = L.map(mapEl.value, { zoomControl: true, preferCanvas: true }).setView([53.9, 27.6], 7)
   applyTiles()
   setTimeout(() => { if (map) map.invalidateSize() }, 200)
 }
@@ -192,23 +215,26 @@ const onThemeChanged = (e) => {
 const fetch = async () => {
   loading.value = true
   try {
-    const [list, cats] = await Promise.all([
-      attractionsAPI.list({ per_page: 200 }),
-      attractionsAPI.categories()
-    ])
-    all.value = list.data.attractions
-    categories.value = cats.data.categories || []
+    const res = await attractionsAPI.map()
+    all.value = res.data.attractions || []
+    categories.value = res.data.categories || []
+  } catch {
+    error.value = 'Could not load map attractions. Refresh to try again.'
   } finally {
     loading.value = false
   }
 }
 
-watch([mapped, mode], render)
+watch(mapped, () => {
+  scrollTop.value = 0
+  if (listEl.value) listEl.value.scrollTop = 0
+  render()
+})
+watch(mode, render)
 
 onMounted(async () => {
-  await fetch()
   await initMap()
-  render()
+  await fetch()
   window.addEventListener('app:theme-changed', onThemeChanged)
 })
 
@@ -252,8 +278,10 @@ onBeforeUnmount(() => {
 }
 .sidepanel .section-head { padding: .8rem 1rem 0; }
 
-.cards { list-style: none; margin: 0; padding: .4rem .5rem .8rem; overflow-y: auto; flex: 1 1 auto; display: flex; flex-direction: column; gap: .25rem; }
+.cards { list-style: none; margin: 0; padding: .4rem .5rem .8rem; overflow-y: auto; flex: 1 1 auto; display: flex; flex-direction: column; }
+.list-spacer { flex-shrink: 0; }
 .mini {
+  height: 112px; min-height: 112px; box-sizing: border-box; flex-shrink: 0;
   display: flex; align-items: center; gap: .55rem;
   padding: .35rem; border-radius: var(--radius-sm); cursor: pointer;
   transition: background-color var(--speed) var(--ease);

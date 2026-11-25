@@ -1,3 +1,4 @@
+from pathlib import Path
 from flask import Flask, send_from_directory
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
@@ -7,18 +8,25 @@ from models import db
 jwt = JWTManager()
 
 
-def create_app():
+def create_app(test_config=None):
     app = Flask(__name__, static_folder='static', template_folder='templates')
     app.config.from_object(Config)
+    if test_config:
+        app.config.update(test_config)
 
     CORS(app, resources={r"/api/*": {"origins": "*"}})
     db.init_app(app)
     jwt.init_app(app)
+    from services.catalog_cache import init_catalog_cache
+    from services.http_response import init_http_response
+    init_catalog_cache(app)
+    init_http_response(app)
 
     from routes.auth import auth_bp
     from routes.users import users_bp
     from routes.attractions import attractions_bp
     from routes.reviews import reviews_bp
+    from routes.external_reviews import external_reviews_bp
     from routes.recommendation import recommendation_bp
     from routes.wishlist import wishlist_bp
     from routes.articles import articles_bp
@@ -28,10 +36,12 @@ def create_app():
     from routes.algo import algo_bp
     from routes.analytics import analytics_bp
 
+    # 接口按功能分组，统一从/api访问。
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
     app.register_blueprint(attractions_bp, url_prefix='/api/attractions')
     app.register_blueprint(reviews_bp, url_prefix='/api/reviews')
+    app.register_blueprint(external_reviews_bp, url_prefix='/api/attractions')
     app.register_blueprint(recommendation_bp, url_prefix='/api/recommendations')
     app.register_blueprint(wishlist_bp, url_prefix='/api/wishlist')
     app.register_blueprint(articles_bp, url_prefix='/api/articles')
@@ -41,17 +51,24 @@ def create_app():
     app.register_blueprint(algo_bp, url_prefix='/api/algo')
     app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
 
+    web_folder = Path(app.static_folder) / 'web'
+    if not (web_folder / 'index.html').exists():
+        web_folder = Path(app.static_folder)
+
     @app.route('/')
     def index():
-        return send_from_directory('static', 'index.html')
+        return send_from_directory(web_folder, 'index.html')
 
     @app.route('/<path:path>')
     def serve_static(path):
         import os as _os
-        candidate = _os.path.join(app.static_folder, path)
+        candidate = _os.path.join(web_folder, path)
         if _os.path.isfile(candidate):
-            return send_from_directory('static', path)
-        return send_from_directory('static', 'index.html')
+            return send_from_directory(web_folder, path)
+        if path.startswith('assets/'):
+            from flask import abort
+            abort(404)
+        return send_from_directory(web_folder, 'index.html')
 
     return app
 

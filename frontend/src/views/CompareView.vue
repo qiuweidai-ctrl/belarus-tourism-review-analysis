@@ -60,11 +60,11 @@
           <div class="cth attr"><span class="ico">{{ row.icon }}</span><span>{{ row.label }}</span></div>
           <div class="cth col a" :class="{ winner: row.winner === 'A' }">
             <span v-if="row.type === 'stars'">
-              <span class="stars">{{ starsFor(a.avg_rating) }}</span>
-              <em>{{ Number(a.avg_rating).toFixed(2) }}</em>
+              <strong>{{ formatExternalRating(a) }}</strong>
+              <ExternalRatingSource :attraction="a" :show-score="false" />
             </span>
             <span v-else-if="row.type === 'image'">
-              <img v-if="a.image_url" :src="a.image_url" :alt="a.name" />
+              <img v-if="a.image_url" :src="a.thumbnail_url || a.image_url" :alt="a.name" loading="lazy" decoding="async" />
               <span v-else class="no-img">🏛️</span>
             </span>
             <span v-else-if="row.type === 'pills'">
@@ -72,8 +72,7 @@
               <span v-if="!a.is_featured" class="muted">—</span>
             </span>
             <span v-else-if="row.type === 'price'">
-              <strong v-if="a.ticket_price">{{ a.ticket_price.toFixed(2) }} BYN</strong>
-              <span v-else class="muted">Free</span>
+              <strong>{{ priceLabel(a.ticket_price) }}</strong>
             </span>
             <span v-else-if="row.type === 'number'" :class="{ 'big-num': true }">{{ row.render(a) }}</span>
             <span v-else>{{ row.render(a) || '—' }}</span>
@@ -81,11 +80,11 @@
           </div>
           <div class="cth col b" :class="{ winner: row.winner === 'B' }">
             <span v-if="row.type === 'stars'">
-              <span class="stars">{{ starsFor(b.avg_rating) }}</span>
-              <em>{{ Number(b.avg_rating).toFixed(2) }}</em>
+              <strong>{{ formatExternalRating(b) }}</strong>
+              <ExternalRatingSource :attraction="b" :show-score="false" />
             </span>
             <span v-else-if="row.type === 'image'">
-              <img v-if="b.image_url" :src="b.image_url" :alt="b.name" />
+              <img v-if="b.image_url" :src="b.thumbnail_url || b.image_url" :alt="b.name" loading="lazy" decoding="async" />
               <span v-else class="no-img">🏛️</span>
             </span>
             <span v-else-if="row.type === 'pills'">
@@ -93,8 +92,7 @@
               <span v-if="!b.is_featured" class="muted">—</span>
             </span>
             <span v-else-if="row.type === 'price'">
-              <strong v-if="b.ticket_price">{{ b.ticket_price.toFixed(2) }} BYN</strong>
-              <span v-else class="muted">Free</span>
+              <strong>{{ priceLabel(b.ticket_price) }}</strong>
             </span>
             <span v-else-if="row.type === 'number'" class="big-num">{{ row.render(b) }}</span>
             <span v-else>{{ row.render(b) || '—' }}</span>
@@ -110,9 +108,12 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { attractionsAPI } from '@/api/client.js'
 import { attractionName, formatCategory, formatPlace } from '@/utils/displayText.js'
+import { externalProvider, externalReviewCount, externalScore, formatExternalRating } from '@/utils/ratings.js'
 import EmptyState from '../components/EmptyState.vue'
+import ExternalRatingSource from '../components/ExternalRatingSource.vue'
 
 const all = ref([])
+const priceLabel = (price) => price === 0 ? 'Free' : `${price.toFixed(2)} BYN`
 const idA = ref('')
 const idB = ref('')
 const a = ref(null)
@@ -122,14 +123,8 @@ const loading = ref(false)
 const optionsForB = computed(() => all.value.filter((x) => x.id !== Number(idB.value)))
 const optionsForA = computed(() => all.value.filter((x) => x.id !== Number(idA.value)))
 
-const starsFor = (r) => {
-  const full = Math.round(r || 0)
-  return '★'.repeat(full) + '☆'.repeat(5 - full)
-}
-
 const fetchAll = async () => {
-  const res = await attractionsAPI.list({ per_page: 200 })
-  all.value = res.data.attractions
+  all.value = await attractionsAPI.all()
 }
 
 const fetchOne = async (id) => {
@@ -141,6 +136,7 @@ const loadPair = async () => {
   if (!idA.value || !idB.value) { a.value = b.value = null; return }
   loading.value = true
   try {
+    // 两个景点同时读取，减少等待时间。
     const [ra, rb] = await Promise.all([fetchOne(idA.value), fetchOne(idB.value)])
     a.value = ra; b.value = rb
   } finally { loading.value = false }
@@ -159,8 +155,8 @@ const rows = computed(() => {
     { label: 'City', icon: '🏙️', render: (x) => formatPlace(x.city) },
     { label: 'Region', icon: '🗺️', render: (x) => formatPlace(x.region) },
     { label: 'Category', icon: '🏷️', render: (x) => formatCategory(x.category) },
-    { label: 'Rating', icon: '⭐', type: 'stars', winner: higherWins(A.avg_rating, B.avg_rating) },
-    { label: 'Reviews', icon: '💬', type: 'number', render: (x) => (x.total_reviews || 0).toLocaleString('en-US'), winner: higherWins(A.total_reviews, B.total_reviews) },
+    { label: 'External rating', icon: '⭐', type: 'stars', winner: higherWins(externalScore(A), externalScore(B)) },
+    { label: 'Platform count', icon: '💬', type: 'number', render: (x) => externalReviewCount(x).toLocaleString('en-US'), winner: higherWins(externalReviewCount(A), externalReviewCount(B)) },
     { label: 'Ticket price', icon: '🎟️', type: 'price', winner: lowerWins(A.ticket_price, B.ticket_price) },
     { label: 'Wishlists', icon: '♥', type: 'number', render: (x) => (x.wishlist_count || 0).toLocaleString('en-US'), winner: higherWins(A.wishlist_count, B.wishlist_count) },
     { label: 'Views', icon: '👁️', type: 'number', render: (x) => (x.view_count || 0).toLocaleString('en-US'), winner: higherWins(A.view_count, B.view_count) },
@@ -169,7 +165,13 @@ const rows = computed(() => {
     { label: 'Opening hours', icon: '🕒', render: (x) => x.opening_hours || '—' },
     { label: 'Location', icon: '📍', render: (x) => formatPlace(x.location) },
     { label: 'Featured', icon: '🏅', type: 'pills' }
-  ]
+  ].filter((row) => {
+    if (row.type === 'price') return A.ticket_price != null && B.ticket_price != null
+    if (row.label === 'Opening hours') return Boolean(A.opening_hours && B.opening_hours)
+    if (row.label === 'Best season') return Boolean(A.suitable_season && B.suitable_season)
+    if (row.label === 'Sentiment') return A.sentiment_score != null && B.sentiment_score != null
+    return true
+  })
 })
 const summaryBars = computed(() => {
   if (!a.value || !b.value) return []
@@ -186,8 +188,8 @@ const summaryBars = computed(() => {
     }
   }
   return [
-    make('Rating', A.avg_rating, B.avg_rating, (n) => n.toFixed(2)),
-    make('Reviews', safe(A.total_reviews), safe(B.total_reviews), (n) => Math.round(n).toLocaleString('en-US')),
+    make('Rating', externalScore(A), externalScore(B), (n) => n.toFixed(2)),
+    make('Platform count', externalReviewCount(A), externalReviewCount(B), (n) => Math.round(n).toLocaleString('en-US')),
     make('Popularity (views)', safe(A.view_count), safe(B.view_count), (n) => Math.round(n).toLocaleString('en-US'))
   ]
 })

@@ -1,4 +1,4 @@
-from models import Wishlist
+from models import Attraction, Wishlist
 from app import db
 from .base_repository import BaseRepository
 
@@ -6,6 +6,7 @@ from .base_repository import BaseRepository
 class WishlistRepository(BaseRepository):
     model = Wishlist
 
+    # 已经收藏就取消，否则新增一条。
     def toggle(self, user_id, attraction_id, note=None, priority=3):
         existing = Wishlist.query.filter_by(
             user_id=user_id, attraction_id=attraction_id
@@ -26,9 +27,11 @@ class WishlistRepository(BaseRepository):
         return item, True
 
     def get_user_wishlist(self, user_id, visited=None, page=1, per_page=20):
-        query = Wishlist.query.filter_by(user_id=user_id)
+        query = Wishlist.query.join(Attraction).filter(
+            Wishlist.user_id == user_id, Attraction.catalog_status == 'active'
+        )
         if visited is not None:
-            query = query.filter_by(visited=visited)
+            query = query.filter(Wishlist.visited == visited)
         return query.order_by(
             Wishlist.priority.asc(), Wishlist.created_at.desc()
         ).paginate(page=page, per_page=per_page, error_out=False)

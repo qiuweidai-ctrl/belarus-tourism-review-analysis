@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from repositories import RatingRepository, AttractionRepository
 from services import RecommendationService
+from models import Attraction
 
 recommendation_bp = Blueprint('recommendation', __name__)
 
@@ -19,7 +20,7 @@ def get_recommendations():
     user_ratings = rating_repo.get_user_ratings(user_id)
     rated_ids = [r.attraction_id for r in user_ratings]
 
-    all_attractions = attraction_repo.get_all(limit=1000)
+    all_attractions = Attraction.query.filter_by(catalog_status='active').limit(1000).all()
     recommendations = rec_service.get_recommendations(
         user_id=user_id,
         rated_attraction_ids=rated_ids,
@@ -40,7 +41,7 @@ def predict_rating():
         return jsonify({'error': 'attraction_id is required'}), 400
 
     attraction = attraction_repo.get_by_id(attraction_id)
-    if not attraction:
+    if not attraction or attraction.catalog_status != 'active':
         return jsonify({'error': 'Attraction not found'}), 404
 
     user_ratings = rating_repo.get_user_ratings(user_id)
@@ -54,7 +55,7 @@ def predict_rating():
         user_id=user_id,
         attraction_id=attraction_id,
         attraction_name=attraction.name,
-        attraction_avg=float(attraction.avg_rating or 0),
+        attraction_avg=(float(attraction.avg_rating) if attraction.total_reviews else None),
         user_history=user_history
     )
 

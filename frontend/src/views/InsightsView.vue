@@ -4,8 +4,7 @@
       <div>
         <h1 class="page-title">Data Insights</h1>
         <p class="page-sub">
-          Every chart below is aggregated in SQL so the picture stays readable —
-          no 30-slice pies, no overlapping line spaghetti.
+          Attraction scores come from external platforms. Site reviews and sentiment analysis are deferred.
         </p>
       </div>
       <div class="head-actions">
@@ -23,35 +22,40 @@
 
     <div v-if="error" class="alert alert-error">{{ error }}</div>
 
-    <section class="grid grid-4 fade-up" aria-label="Key figures">
+    <section v-if="loading.overview" class="grid grid-4" aria-label="Loading key figures">
+      <div v-for="i in 6" :key="i" class="card skeleton" style="min-height: 84px"></div>
+    </section>
+    <section v-else class="grid grid-4 fade-up" aria-label="Key figures">
       <StatCard label="Attractions" :value="ov.attractions || 0" icon="🏛️" color="var(--brand-600)" />
-      <StatCard label="Published reviews" :value="ov.reviews || 0" icon="💬" color="var(--info)" />
-      <StatCard label="Average rating" :value="ov.avg_rating || 0" :decimals="2" icon="⭐" color="var(--accent-600)" suffix=" / 5" />
+      <StatCard v-if="SITE_RATINGS_ENABLED" label="Published reviews" :value="ov.reviews || 0" icon="💬" color="var(--info)" />
+      <StatCard label="External catalog rating" :value="ov.external_avg_rating || 0" :decimals="2" icon="⭐" color="var(--accent-600)" suffix=" / 5" />
       <StatCard
+        v-if="SITE_RATINGS_ENABLED"
         label="Positive sentiment"
         :value="positiveRatio"
-        :decimals="1" icon="😊" color="var(--success)" suffix="%"
-        :hint="ov.sentiment ? ov.sentiment.positive + ' of ' + ov.sentiment.total + ' analysed' : ''"
+        :decimals="1" icon="😊" color="var(--success)" :suffix="positiveRatio === 'Unavailable' ? '' : '%'"
+        :hint="ov.sentiment?.total ? ov.sentiment.positive + ' of ' + ov.sentiment.total + ' analysed' : 'No site reviews available'"
       />
       <StatCard label="Registered users" :value="ov.users || 0" icon="👥" color="var(--brand-600)" />
       <StatCard label="Travel guides" :value="ov.articles || 0" icon="📰" color="var(--info)" />
       <StatCard label="Total views" :value="ov.total_views || 0" icon="👁️" color="var(--accent-600)" />
-      <StatCard label="Average ticket" :value="ov.avg_price || 0" :decimals="2" icon="🎟️" color="var(--brand-600)" suffix=" BYN" />
+      <StatCard label="Average ticket" :value="ov.avg_price == null ? 'Unavailable' : ov.avg_price" :decimals="2" icon="🎟️" color="var(--brand-600)" :suffix="ov.avg_price == null ? '' : ' BYN'" />
     </section>
 
-    <section class="chart-grid fade-up">
+    <section class="chart-grid fade-up" :class="{ 'chart-grid-single': !SITE_RATINGS_ENABLED }">
       <ChartCard
-        title="Rating distribution"
-        subtitle="How visitors scored their visits"
+        title="Exact rating distribution"
+        subtitle="Attraction counts for each external score out of 5. Scores are not rounded to whole stars."
         :option="ratingOption"
-        :loading="loading"
+        :loading="loading.rating"
         height="310px"
       />
       <ChartCard
+        v-if="SITE_RATINGS_ENABLED"
         title="Who visits"
         subtitle="Traveller type mix"
         :option="travelTypeOption"
-        :loading="loading"
+        :loading="loading.trend"
         height="310px"
       />
     </section>
@@ -61,43 +65,40 @@
         title="Attractions by category"
         subtitle="Tile size is attraction count, shade is average rating"
         :option="categoryOption"
-        :loading="loading"
+        :loading="loading.rating"
         height="380px"
       />
       <ChartCard
         title="Where they are"
         subtitle="Attraction count per region, ranked"
         :option="regionOption"
-        :loading="loading"
+        :loading="loading.region"
         height="380px"
       />
     </section>
 
-    <section class="chart-grid fade-up">
-      <ChartCard title="Ticket price bands" subtitle="Percentage of attractions in each price range" :option="priceOption" :loading="loading" height="320px">
-        <template #footer>
-          <span>Average ticket price: <strong>{{ Number(priceSummary.avg || 0).toFixed(2) }} BYN</strong></span>
-        </template>
-      </ChartCard>
+    <section v-if="SITE_RATINGS_ENABLED" class="chart-grid fade-up">
       <ChartCard
+        v-if="SITE_RATINGS_ENABLED"
         title="Reviews over time"
         subtitle="Monthly volume with the average score for each month"
         :option="trendOption"
-        :loading="loading"
+        :loading="loading.trend"
         height="320px"
       />
     </section>
 
     <section class="chart-grid fade-up">
       <ChartCard
+        v-if="SITE_RATINGS_ENABLED"
         title="Sentiment by category"
         subtitle="Share of positive / neutral / negative reviews"
         :option="sentimentOption"
-        :loading="loading"
+        :loading="loading.sentiment"
         height="360px"
       />
 
-      <section class="card leaderboard">
+      <section class="card leaderboard" :class="{ 'span-all': !SITE_RATINGS_ENABLED }">
         <header class="lb-head">
           <h3>Leaderboard</h3>
           <div class="seg" role="tablist">
@@ -112,14 +113,16 @@
             >{{ m.label }}</button>
           </div>
         </header>
-        <ol v-if="top.length" class="lb-list">
+        <p v-if="loading.top" class="empty-state">Loading rankings…</p>
+        <ol v-else-if="top.length" class="lb-list">
           <li v-for="(a, i) in top" :key="a.id" class="lb-row" @click="$router.push('/attractions/' + a.id)">
             <span class="rank" :class="'r' + Math.min(i + 1, 4)">{{ i + 1 }}</span>
-            <img v-if="a.image_url" :src="a.image_url" :alt="a.name" loading="lazy" />
+            <img v-if="a.image_url" :src="a.thumbnail_url || a.image_url" :alt="a.name" loading="lazy" decoding="async" />
             <span v-else class="no-img">🏛️</span>
             <span class="lb-name">
               <strong>{{ a.name }}</strong>
               <em>{{ formatPlace(a.city || a.region) || '—' }}</em>
+              <ExternalRatingSource :attraction="a" :show-score="metric !== 'rating'" :show-count="metric !== 'reviews'" />
             </span>
             <span class="lb-value">
               <strong>{{ metricValue(a) }}</strong>
@@ -134,28 +137,30 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { analyticsAPI } from '@/api/client.js'
 import StatCard from '../components/StatCard.vue'
 import ChartCard from '../components/ChartCard.vue'
+import ExternalRatingSource from '../components/ExternalRatingSource.vue'
 import { formatCategory, formatPlace } from '@/utils/displayText.js'
+import { storedReviewCount, formatExternalScore } from '@/utils/ratings.js'
+import { SITE_RATINGS_ENABLED } from '@/config/features.js'
 
-const loading = ref(true)
+const loading = reactive({ overview: true, rating: true, region: true, trend: SITE_RATINGS_ENABLED, sentiment: SITE_RATINGS_ENABLED, top: true })
 const error = ref('')
 const exporting = ref('')
 
 const ov = ref({})
-const rating = ref({ stars: [], categories: [] })
+const rating = ref({ scores: [], categories: [] })
 const region = ref({ regions: [], cities: [] })
-const price = ref({ bands: [], summary: {} })
 const trend = ref({ points: [], travel_types: [] })
 const sentiment = ref({ overall: [], by_category: [] })
 const top = ref([])
 const metric = ref('rating')
 
 const metrics = [
-  { key: 'rating', label: 'Rating', label_: 'rating', fmt: (a) => Number(a.avg_rating).toFixed(2) },
-  { key: 'reviews', label: 'Reviews', label_: 'reviews', fmt: (a) => a.total_reviews },
+  { key: 'rating', label: 'External rating', label_: 'platform score / 5', fmt: (a) => formatExternalScore(a) },
+  { key: 'reviews', label: 'Stored reviews', label_: 'reviews stored on this site', fmt: (a) => storedReviewCount(a).toLocaleString('en-US') },
   { key: 'views', label: 'Views', label_: 'views', fmt: (a) => a.view_count },
   { key: 'wishlist', label: 'Saves', label_: 'saves', fmt: (a) => a.wishlist_count }
 ]
@@ -175,11 +180,9 @@ const exportDatasets = [
   { key: 'users', label: 'users' }
 ].filter((item) => item.key !== 'users' || ['admin', 'moderator'].includes(signedInUser?.role))
 
-const priceSummary = computed(() => price.value.summary || {})
-
 const positiveRatio = computed(() => {
   const s = ov.value.sentiment
-  if (!s || !s.total) return 0
+  if (!s || !s.total) return 'Unavailable'
   return (s.positive / s.total) * 100
 })
 
@@ -192,16 +195,16 @@ const pink = '#ec4899'
 const cyan = '#06b6d4'
 
 const ratingOption = computed(() => {
-  const rows = rating.value.stars || []
+  const rows = rating.value.scores || []
   return {
     grid: { left: 8, right: 30, top: 24, bottom: 8, containLabel: true },
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
     xAxis: {
       type: 'category',
-      data: rows.map((r) => r.rating + ' ★'),
+      data: rows.map((r) => String(r.rating)),
       axisLabel: { fontSize: 12 }
     },
-    yAxis: { type: 'value', name: 'Reviews', nameTextStyle: { fontSize: 11 } },
+    yAxis: { type: 'value', name: 'Attractions', nameTextStyle: { fontSize: 11 } },
     series: [{
       type: 'bar',
       data: rows.map((r) => ({
@@ -310,48 +313,6 @@ const regionOption = computed(() => {
   }
 })
 
-const priceOption = computed(() => {
-  const rows = price.value.bands || []
-  const total = rows.reduce((sum, row) => sum + Number(row.count || 0), 0)
-  const percentages = rows.map((row) => total ? Number((row.count / total * 100).toFixed(1)) : 0)
-  return {
-    grid: { left: 8, right: 24, top: 24, bottom: 32, containLabel: true },
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: { type: 'shadow' },
-      formatter: (items) => {
-        const item = items[0]
-        const source = rows.find((row) => row.label === item.name) || {}
-        return `${item.name}<br/>${item.value}% of attractions<br/>${source.count || 0} attractions`
-      }
-    },
-    xAxis: {
-      type: 'value',
-      name: 'Percentage of attractions',
-      nameLocation: 'middle',
-      nameGap: 27,
-      max: 100,
-      axisLabel: { formatter: '{value}%', fontSize: 9 },
-      nameTextStyle: { fontSize: 10 }
-    },
-    yAxis: {
-      type: 'category',
-      data: rows.map((r) => r.label).reverse(),
-      axisLabel: { fontSize: 11 }
-    },
-    series: [{
-      type: 'bar',
-      data: percentages.reverse(),
-      barWidth: '58%',
-      itemStyle: {
-        borderRadius: [0, 6, 6, 0],
-        color: (p) => [brandGreen, brandTeal, blue, purple, amber][p.dataIndex % 5]
-      },
-      label: { show: true, position: 'right', formatter: '{c}%', fontWeight: 600, fontSize: 10 }
-    }]
-  }
-})
-
 const trendOption = computed(() => {
   const pts = trend.value.points || []
   return {
@@ -416,38 +377,32 @@ const sentimentOption = computed(() => {
   }
 })
 
+let topRequest = 0
 const loadTop = async () => {
+  const current = ++topRequest
+  loading.top = true
   try {
     const res = await analyticsAPI.topAttractions({ metric: metric.value, limit: 8 })
-    top.value = res.data.items || []
-  } catch (e) { }
+    if (current === topRequest) top.value = res.data.items || []
+  } catch (e) {
+    if (current === topRequest) error.value = 'Could not load rankings. Refresh to try again.'
+  } finally { if (current === topRequest) loading.top = false }
 }
 
 const loadAll = async () => {
-  loading.value = true
   error.value = ''
-  try {
-    const [o, r, reg, p, t, s] = await Promise.all([
-      analyticsAPI.overview(),
-      analyticsAPI.ratingDistribution(),
-      analyticsAPI.regionDistribution(),
-      analyticsAPI.priceAnalysis(),
-      analyticsAPI.reviewTrend(),
-      analyticsAPI.sentimentBreakdown()
-    ])
-    ov.value = o.data
-    rating.value = r.data
-    region.value = reg.data
-    price.value = p.data
-    trend.value = t.data
-    sentiment.value = s.data
-    await loadTop()
-  } catch (e) {
-    error.value = 'Could not load analytics. Is the Flask API running on port 5000?'
-    console.error(e)
-  } finally {
-    loading.value = false
+  const load = async (key, request, target) => {
+    try { target.value = (await request()).data }
+    catch { error.value = `Could not load ${key} data. Refresh to try again.` }
+    finally { loading[key] = false }
   }
+  await Promise.allSettled([
+    load('overview', () => analyticsAPI.overview(), ov),
+    load('rating', () => analyticsAPI.ratingDistribution(), rating),
+    load('region', () => analyticsAPI.regionDistribution(), region),
+    ...(SITE_RATINGS_ENABLED ? [load('trend', () => analyticsAPI.reviewTrend(), trend), load('sentiment', () => analyticsAPI.sentimentBreakdown(), sentiment)] : []),
+    loadTop()
+  ])
 }
 
 watch(metric, loadTop)
@@ -476,6 +431,8 @@ onMounted(loadAll)
 
 <style scoped>
 .insights { display: flex; flex-direction: column; gap: 1.25rem; }
+.chart-grid-single { grid-template-columns: 1fr; }
+.span-all { grid-column: 1 / -1; }
 .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .head-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
 

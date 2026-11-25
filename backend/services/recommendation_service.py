@@ -1,6 +1,8 @@
 import requests
 import json
 from config import Config
+from services.attraction_presenter import serialize_attraction
+from services.catalog import select_primary_rating, normalized_score
 
 
 class RecommendationService:
@@ -34,9 +36,14 @@ class RecommendationService:
 
         prompt_text += f"Based on this user's preferences, recommend exactly {limit} attractions from this list:\n"
         for a in candidates[:20]:
+            primary = select_primary_rating([
+                {'score': float(r.score), 'scale': float(r.scale),
+                 'review_count': r.review_count, 'retrieved_at': r.retrieved_at}
+                for r in a.external_ratings
+            ])
             prompt_text += (f"- ID:{a.id} | {a.name} in {a.location} "
-                            f"(avg rating: {float(a.avg_rating or 0):.1f}, "
-                            f"reviews: {a.total_reviews or 0}, category: {a.category})\n")
+                            f"(external rating: {normalized_score(primary) if primary else 'unavailable'}, "
+                            f"reviews: {primary['review_count'] if primary else 0}, category: {a.category})\n")
 
         prompt_text += (
             f"\nRespond ONLY with a JSON array (no markdown, no explanation) with exactly {limit} items.\n"
@@ -81,10 +88,11 @@ class RecommendationService:
                       user_history: list) -> dict:
         if not user_history:
             return {
-                'predicted_rating': round(float(attraction_avg), 2),
-                'method': 'attraction_avg',
-                'reason': 'Based on average rating of this attraction'
+                'predicted_rating': None,
+                'method': 'unavailable',
+                'reason': 'No first-party rating history is available'
             }
+        attraction_avg = float(attraction_avg) if attraction_avg is not None else 3.0
         try:
             return self._ai_predict(attraction_name, attraction_avg, user_history)
         except Exception:
@@ -126,6 +134,7 @@ class RecommendationService:
             'reason': parsed.get('reason', '')
         }
 
+    # 没有AI结果时，用用户历史评分估算。
     def _statistical_predict(self, user_history: list, attraction_avg: float) -> dict:
         avg_user = sum(h['score'] for h in user_history) / len(user_history)
         diff = avg_user - 3.0
@@ -139,22 +148,15 @@ class RecommendationService:
     def _build_fallback_recs(self, attractions: list, reason: str) -> list:
         sorted_att = sorted(
             attractions,
-            key=lambda a: float(a.avg_rating or 0) * (a.total_reviews or 0 + 1),
+            key=lambda a: max((r.review_count for r in a.external_ratings), default=0),
             reverse=True
         )
         return [self._format_attraction(a, reason) for a in sorted_att]
 
     def _format_attraction(self, a, reason: str = '') -> dict:
-        return {
-            'id': a.id,
-            'name': a.name,
-            'location': a.location,
-            'category': a.category,
-            'avg_rating': round(float(a.avg_rating or 0), 2),
-            'description': a.short_desc or (a.description or '')[:150],
-            'image_url': a.image_url,
-            'reason': reason
-        }
+        data = serialize_attraction(a)
+        data['reason'] = reason
+        return data
 
     def _get_user_rating_context(self, user_id: int) -> list:
         from repositories import RatingRepository, AttractionRepository

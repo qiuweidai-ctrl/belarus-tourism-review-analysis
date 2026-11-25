@@ -7,6 +7,7 @@ qa_bp = Blueprint('qa', __name__)
 
 
 @qa_bp.route('/questions', methods=['GET'])
+# 问题、回答和投票分别保存。
 def list_questions():
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)

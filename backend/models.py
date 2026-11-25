@@ -84,8 +84,24 @@ class Attraction(db.Model):
     suitable_season = db.Column(db.String(100), nullable=True)
     opening_hours = db.Column(db.String(200), nullable=True)
     ticket_price = db.Column(db.Numeric(10, 2), nullable=True)
-    image_url = db.Column(db.String(500), nullable=True)
+    image_url = db.Column(db.Text, nullable=True)
     images_json = db.Column(db.JSON, nullable=True)
+    wikidata_qid = db.Column(db.String(20), nullable=True, unique=True)
+    source_name = db.Column(db.String(100), nullable=True)
+    source_url = db.Column(db.String(500), nullable=True)
+    source_license = db.Column(db.String(100), nullable=True)
+    source_retrieved_at = db.Column(db.DateTime, nullable=True)
+    description_source_url = db.Column(db.String(500), nullable=True)
+    description_license = db.Column(db.String(100), nullable=True)
+    image_source_url = db.Column(db.Text, nullable=True)
+    image_author = db.Column(db.String(255), nullable=True)
+    image_license = db.Column(db.String(100), nullable=True)
+    image_license_url = db.Column(db.String(500), nullable=True)
+    price_source_url = db.Column(db.String(500), nullable=True)
+    price_checked_at = db.Column(db.DateTime, nullable=True)
+    opening_hours_source_url = db.Column(db.String(500), nullable=True)
+    catalog_status = db.Column(db.String(20), nullable=False, default='draft')
+    field_sources = db.Column(db.JSON, nullable=True)
     avg_rating = db.Column(db.Numeric(3, 2), nullable=False, default=0.00)
     total_reviews = db.Column(db.Integer, nullable=False, default=0)
     sentiment_score = db.Column(db.Numeric(4, 3), nullable=True, default=0.000)
@@ -102,12 +118,84 @@ class Attraction(db.Model):
     reviews = db.relationship('Review', backref='attraction', lazy='dynamic')
     ratings = db.relationship('Rating', backref='attraction', lazy='dynamic')
     wishlists = db.relationship('Wishlist', backref='attraction', lazy='dynamic')
+    external_ratings = db.relationship(
+        'ExternalRating', backref='attraction', lazy='selectin',
+        cascade='all, delete-orphan', passive_deletes=True,
+    )
 
     __table_args__ = (
         Index('idx_category', 'category'),
         Index('idx_region', 'region'),
         Index('idx_avg_rating', 'avg_rating'),
         Index('idx_is_featured', 'is_featured'),
+        Index('idx_wikidata_qid', 'wikidata_qid'),
+        Index('idx_catalog_status', 'catalog_status'),
+    )
+
+
+# 平台评分和本站用户评分分开存。
+class ExternalRating(db.Model):
+    __tablename__ = 'external_ratings'
+
+    id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+    attraction_id = db.Column(
+        db.BigInteger,
+        db.ForeignKey('attractions.id', ondelete='CASCADE'),
+        nullable=False,
+    )
+    provider = db.Column(db.String(50), nullable=False)
+    provider_poi_id = db.Column(db.String(100), nullable=False)
+    score = db.Column(db.Numeric(5, 2), nullable=False)
+    scale = db.Column(db.Numeric(5, 2), nullable=False, default=5.0)
+    review_count = db.Column(db.Integer, nullable=False)
+    source_url = db.Column(db.String(1000), nullable=False)
+    retrieved_from = db.Column(db.Text, nullable=True)
+    retrieved_at = db.Column(db.DateTime, nullable=False)
+    extractor_version = db.Column(db.String(50), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, nullable=False, default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            'provider', 'provider_poi_id',
+            name='uk_external_rating_provider_poi',
+        ),
+        Index('idx_external_rating_attraction', 'attraction_id'),
+        Index('idx_external_rating_provider', 'provider'),
+        Index('idx_external_rating_reviews', 'review_count'),
+    )
+
+
+# 这里只存外部评论摘录，作者名不对应本站账号。
+class ExternalReview(db.Model):
+    __tablename__ = 'external_reviews'
+
+    id = db.Column(db.BigInteger().with_variant(db.Integer, 'sqlite'), primary_key=True, autoincrement=True)
+    attraction_id = db.Column(db.BigInteger, db.ForeignKey('attractions.id', ondelete='CASCADE'), nullable=False)
+    provider = db.Column(db.String(50), nullable=False)
+    provider_poi_id = db.Column(db.String(100), nullable=False)
+    provider_review_id = db.Column(db.String(200), nullable=False)
+    author_name = db.Column(db.String(200), nullable=False)
+    published_at = db.Column(db.DateTime, nullable=False)
+    date_source = db.Column(db.String(100), nullable=False)
+    original_language = db.Column(db.String(20), nullable=False)
+    excerpt = db.Column(db.Text, nullable=False)
+    excerpt_word_count = db.Column(db.Integer, nullable=False)
+    is_truncated = db.Column(db.Boolean, nullable=False)
+    score = db.Column(db.Numeric(5, 2), nullable=True)
+    scale = db.Column(db.Numeric(5, 2), nullable=True)
+    source_url = db.Column(db.Text, nullable=False)
+    retrieved_from = db.Column(db.Text, nullable=False)
+    retrieved_at = db.Column(db.DateTime, nullable=False)
+    extractor_version = db.Column(db.String(50), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('provider', 'provider_poi_id', 'provider_review_id', name='uk_external_review_source'),
+        Index('idx_external_review_attraction', 'attraction_id'),
     )
 
 
@@ -267,7 +355,6 @@ class SentimentAnalysisLog(db.Model):
 
     id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
     review_id = db.Column(db.BigInteger, db.ForeignKey('reviews.id', ondelete='CASCADE'), nullable=False)
-    content_hash = db.Column(db.String(64), nullable=True)
     raw_response = db.Column(db.JSON, nullable=True)
     sentiment_label = db.Column(db.String(20), nullable=False)
     sentiment_score = db.Column(db.Numeric(4, 3), nullable=False)

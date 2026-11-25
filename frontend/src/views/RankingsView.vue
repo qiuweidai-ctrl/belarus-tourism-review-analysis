@@ -3,7 +3,7 @@
     <header class="page-head">
       <div>
         <h1 class="page-title">Rankings</h1>
-        <p class="page-sub">The leaders, by whatever signal matters to you.</p>
+        <p class="page-sub">Visitor scores from external platforms. Rating order adjusts for rating count; displayed scores remain the platform scores.</p>
       </div>
       <div class="row head-actions">
         <div class="seg" role="tablist" aria-label="Ranking metric">
@@ -40,12 +40,16 @@
         @click="$router.push('/attractions/' + a.id)"
       >
         <span class="medal" :class="'m' + (i + 1)">{{ i + 1 }}</span>
-        <div class="pimg" :style="imgStyle(a)">
-          <span v-if="!a.image_url" class="ph">🏛️</span>
+        <div class="pimg">
+          <img v-if="a.image_url" class="thumbnail-image" :src="a.thumbnail_url || a.image_url" :alt="a.name" decoding="async" />
+          <span v-else class="ph">🏛️</span>
         </div>
-        <h3>{{ a.name }}</h3>
-        <p class="ploc">{{ a.city || a.region || '—' }}</p>
+        <h3 :title="a.name">{{ a.name }}</h3>
+        <p class="ploc" :title="a.city || a.region">{{ a.city || a.region || '—' }}</p>
         <p class="pval">{{ format(a) }}</p>
+        <ExternalRatingSource :attraction="a" :show-score="metric !== 'rating'" :show-count="metric !== 'reviews'" />
+        <p v-if="metric === 'reviews'" class="ploc">reviews stored on this site</p>
+        <div class="podium-step" aria-hidden="true">{{ i + 1 }}</div>
       </div>
     </section>
 
@@ -62,10 +66,12 @@
           @click="$router.push('/attractions/' + a.id)"
         >
           <span class="rank">{{ i + 4 }}</span>
-          <div class="thumb" :style="imgStyle(a)"><span v-if="!a.image_url" class="ph">🏛️</span></div>
+          <div class="thumb"><img v-if="a.image_url" class="thumbnail-image" :src="a.thumbnail_url || a.image_url" :alt="a.name" loading="lazy" decoding="async" /><span v-else class="ph">🏛️</span></div>
           <div class="meta">
             <strong>{{ a.name }}</strong>
             <em>{{ a.city || a.region || '—' }}<span v-if="a.category" class="dot">·</span>{{ cap(a.category) }}</em>
+            <ExternalRatingSource :attraction="a" :show-score="metric !== 'rating'" :show-count="metric !== 'reviews'" />
+            <em v-if="metric === 'reviews'">reviews stored on this site</em>
           </div>
           <span class="val">{{ format(a) }}</span>
         </li>
@@ -80,6 +86,8 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { analyticsAPI } from '@/api/client.js'
 import EmptyState from '../components/EmptyState.vue'
+import ExternalRatingSource from '../components/ExternalRatingSource.vue'
+import { storedReviewCount, formatExternalRating } from '@/utils/ratings.js'
 
 const metric = ref('rating')
 const sortName = ref('')
@@ -88,24 +96,20 @@ const loading = ref(true)
 const error = ref('')
 
 const metrics = [
-  { key: 'rating', label: 'Rating' },
-  { key: 'reviews', label: 'Reviews' },
+  { key: 'rating', label: 'External rating' },
+  { key: 'reviews', label: 'Stored reviews' },
   { key: 'views', label: 'Views' },
   { key: 'wishlist', label: 'Saves' }
 ]
 
 const formatters = {
-  rating: (a) => Number(a.avg_rating || 0).toFixed(2),
-  reviews: (a) => (a.total_reviews || 0).toLocaleString('en-US'),
+  rating: (a) => formatExternalRating(a),
+  reviews: (a) => storedReviewCount(a).toLocaleString('en-US'),
   views: (a) => (a.view_count || 0).toLocaleString('en-US'),
   wishlist: (a) => (a.wishlist_count || 0).toLocaleString('en-US')
 }
 const format = (a) => formatters[metric.value](a)
 const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '—'
-
-const imgStyle = (a) => a.image_url
-  ? { backgroundImage: `url(${a.image_url})` }
-  : { background: 'var(--grad-brand)' }
 
 const sortedRest = computed(() => {
   if (!sortName.value) return top.value.slice(3)
@@ -127,6 +131,7 @@ const load = async () => {
   } finally { loading.value = false }
 }
 
+// 切换榜单指标时重新请求排名。
 watch(metric, load)
 onMounted(load)
 </script>
@@ -154,17 +159,22 @@ onMounted(load)
 .podium {
   display: grid;
   grid-template-columns: 1fr 1.15fr 1fr;
+  grid-template-areas: "second first third";
   align-items: end;
   gap: 1rem;
+  padding-top: 1.5rem;
 }
+.pcard.p1 { grid-area: first; --podium-height: 460px; --photo-height: 160px; }
+.pcard.p2 { grid-area: second; --podium-height: 410px; --photo-height: 140px; }
+.pcard.p3 { grid-area: third; --podium-height: 370px; --photo-height: 120px; }
 .pcard {
-  position: relative; padding: 1.2rem 1.1rem 1.1rem; cursor: pointer;
+  position: relative; padding: 1.5rem 1.1rem 0; cursor: pointer;
+  height: var(--podium-height); min-width: 0;
   text-align: center;
   display: flex; flex-direction: column; align-items: center; gap: .35rem;
   border: 1px solid var(--border);
 }
 .pcard.p1 {
-  padding: 1.7rem 1.1rem 1.3rem;
   background: linear-gradient(135deg, var(--brand-50), var(--surface));
   border: 2px solid var(--brand-300);
   box-shadow: var(--shadow-lg);
@@ -172,7 +182,7 @@ onMounted(load)
 [data-theme='dark'] .pcard.p1 { background: linear-gradient(135deg, rgba(20,184,147,.2), var(--surface)); }
 
 .pimg {
-  width: 100%; max-width: 240px; aspect-ratio: 4/3;
+  width: 100%; max-width: 240px; height: var(--photo-height); flex-shrink: 0;
   background-size: cover; background-position: center;
   border-radius: var(--radius); margin-bottom: .4rem;
   display: flex; align-items: center; justify-content: center;
@@ -192,14 +202,27 @@ onMounted(load)
 .medal.m2 { background: linear-gradient(135deg, #cbd5e1, #64748b); }
 .medal.m3 { background: linear-gradient(135deg, #fdba74, #c2410c); }
 
-.pcard h3 { font-size: 1rem; margin: .2rem 0 0; line-height: 1.3; }
+.pcard h3 {
+  font-size: 1rem; margin: .2rem 0 0; line-height: 1.3; width: 100%;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
+  max-height: 3.9em; overflow: hidden; overflow-wrap: anywhere; flex-shrink: 0;
+}
 .pcard.p1 h3 { font-size: 1.18rem; }
-.ploc { color: var(--text-mute); font-size: .8rem; margin: 0; }
-.pval { color: var(--brand-700); font-weight: 800; font-size: 1rem; margin: .25rem 0 0; }
+.ploc { color: var(--text-mute); font-size: .8rem; margin: 0; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+.pval { color: var(--brand-700); font-weight: 800; font-size: 1rem; margin: .25rem 0 0; flex-shrink: 0; }
 [data-theme='dark'] .pval { color: var(--brand-300); }
 .pcard.p1 .pval { font-size: 1.2rem; }
 
-.sk-pod { height: 260px; }
+.pcard :deep(.external-rating-source) { flex-shrink: 0; max-width: 100%; }
+.podium-step {
+  align-self: stretch; flex-shrink: 0; margin: auto -1.1rem 0;
+  padding: .5rem; border-top: 1px solid var(--border);
+  border-radius: 0 0 var(--radius) var(--radius);
+  font-size: 1.35rem; font-weight: 900; line-height: 1.25;
+}
+.p1 .podium-step { color: #854d0e; background: linear-gradient(135deg, #fef3c7, #fbbf24); }
+.p2 .podium-step { color: #334155; background: linear-gradient(135deg, #f1f5f9, #cbd5e1); }
+.p3 .podium-step { color: #7c2d12; background: linear-gradient(135deg, #ffedd5, #fdba74); }
 
 .list-card { padding: 1rem 1.1rem; }
 .list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .25rem; }
@@ -220,8 +243,11 @@ onMounted(load)
 [data-theme='dark'] .val { color: var(--brand-300); }
 
 @media (max-width: 720px) {
-  .podium { grid-template-columns: 1fr; }
-  .pcard.p1 { padding: 1.2rem 1rem; }
+  .podium { grid-template-columns: 1fr; grid-template-areas: "first" "second" "third"; }
+  .pcard { height: auto; min-height: 330px; }
+  .pcard.p1 { padding: 1.5rem 1.1rem 0; }
+  .pcard h3 { display: block; max-height: none; overflow: visible; }
+  .podium-step { margin-top: .75rem; }
   .pcard.p1 .medal { top: -10px; }
 }
 </style>

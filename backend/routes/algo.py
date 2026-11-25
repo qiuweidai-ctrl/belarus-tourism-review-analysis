@@ -1,9 +1,10 @@
-
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from services import similarity, user_clustering, text_analysis, trending, duplicate_detection
 from models import db, Attraction
 from routes.admin import require_admin
+from services.attraction_presenter import rating_payload
+from services.thumbnails import thumbnail_url
 
 algo_bp = Blueprint('algo', __name__, url_prefix='/api/algo')
 
@@ -17,14 +18,15 @@ def get_similar_attractions(attraction_id):
     results = []
     for item in similar:
         attraction = Attraction.query.get(item['attraction_id'])
-        if attraction:
+        if attraction and attraction.catalog_status == 'active':
             results.append({
                 'attraction_id': attraction.id,
                 'name': attraction.name,
                 'location': attraction.location,
                 'category': attraction.category,
-                'avg_rating': float(attraction.avg_rating),
+                **rating_payload(attraction),
                 'image_url': attraction.image_url,
+                'thumbnail_url': thumbnail_url(attraction.image_url),
                 'similarity': round(item['similarity'] * 100, 2)
             })
 
@@ -45,13 +47,13 @@ def get_personal_recommendations():
     results = []
     for item in recommendations:
         attraction = Attraction.query.get(item['attraction_id'])
-        if attraction:
+        if attraction and attraction.catalog_status == 'active':
             results.append({
                 'attraction_id': attraction.id,
                 'name': attraction.name,
                 'location': attraction.location,
                 'category': attraction.category,
-                'avg_rating': float(attraction.avg_rating),
+                **rating_payload(attraction),
                 'image_url': attraction.image_url,
                 'similarity_score': round(item['similarity'] * 100, 2)
             })
@@ -180,24 +182,9 @@ def get_trending():
 
     trending_data = trending.get_trending_scores(limit, days)
 
-    results = []
-    for item in trending_data:
-        attraction = Attraction.query.get(item['attraction_id'])
-        if attraction:
-            results.append({
-                'attraction_id': attraction.id,
-                'name': attraction.name,
-                'location': attraction.location,
-                'category': attraction.category,
-                'avg_rating': float(attraction.avg_rating),
-                'total_reviews': attraction.total_reviews,
-                'image_url': attraction.image_url,
-                'trending_score': item['score']
-            })
-
     return jsonify({
         'success': True,
-        'data': results
+        'data': trending_data
     })
 
 
@@ -309,7 +296,7 @@ def get_attraction_summary(attraction_id):
 @algo_bp.route('/trending/recalculate', methods=['POST'])
 @require_admin
 def recalculate_trending():
-    attractions = Attraction.query.filter_by(is_verified=True).all()
+    attractions = Attraction.query.filter_by(catalog_status='active').all()
 
     updated_count = 0
     for attraction in attractions:

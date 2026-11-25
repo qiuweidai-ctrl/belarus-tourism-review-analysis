@@ -44,7 +44,7 @@
         <label>Nickname</label>
         <input v-model="editForm.nickname" type="text" />
       </div>
-      <div class="form-group">
+      <div v-if="isAdmin" class="form-group">
         <label>Avatar URL</label>
         <input v-model="editForm.avatar_url" type="text" placeholder="https://..." />
       </div>
@@ -71,16 +71,23 @@
         <label>Bio</label>
         <textarea v-model="editForm.bio" rows="3" placeholder="Tell us about yourself..."></textarea>
       </div>
-      <div class="form-group">
-        <label>Current Password (required for password change)</label>
-        <input v-model="editForm.current_password" type="password" />
-      </div>
-      <div class="form-group">
-        <label>New Password</label>
-        <input v-model="editForm.new_password" type="password" />
-      </div>
       <button @click="saveProfile" :disabled="saving" class="btn-primary">
         {{ saving ? 'Saving...' : 'Save Changes' }}
+      </button>
+    </div>
+
+    <div class="password-card card">
+      <h3>Change Password</h3>
+      <p class="form-hint">Enter your current password, then choose a new password with at least 6 characters.</p>
+      <div v-if="passwordError" class="error-msg">{{ passwordError }}</div>
+      <div v-if="passwordSuccess" class="success-msg">{{ passwordSuccess }}</div>
+      <div class="password-grid">
+        <label>Current Password<input v-model="passwordForm.current" type="password" autocomplete="current-password" /></label>
+        <label>New Password<input v-model="passwordForm.next" type="password" autocomplete="new-password" /></label>
+        <label>Confirm New Password<input v-model="passwordForm.confirm" type="password" autocomplete="new-password" /></label>
+      </div>
+      <button class="btn-primary" :disabled="changingPassword" @click="changePassword">
+        {{ changingPassword ? 'Updating...' : 'Update Password' }}
       </button>
     </div>
 
@@ -119,6 +126,7 @@
           <div class="wishlist-info">
             <h4>{{ item.name }}</h4>
             <p class="wishlist-loc">{{ item.location }}</p>
+            <ExternalRatingSource :attraction="item" />
             <span v-if="item.visited" class="visited-badge">✓ Visited</span>
           </div>
           <button @click="removeWish(item.attraction_id)" class="btn-link delete-btn">Remove</button>
@@ -177,6 +185,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { usersAPI, reviewsAPI, wishlistAPI, articlesAPI, authAPI } from '@/api/client.js'
+import ExternalRatingSource from '../components/ExternalRatingSource.vue'
 
 const profile = ref(JSON.parse(localStorage.getItem('user') || '{}'))
 const showEditForm = ref(false)
@@ -184,6 +193,7 @@ const activeTab = ref('reviews')
 const saving = ref(false)
 const editError = ref('')
 const editSuccess = ref('')
+// 修改资料后让导航栏里的头像和昵称一起更新。
 function syncNavbar() {
   window.dispatchEvent(new Event('storage'))
   try { window.dispatchEvent(new CustomEvent('app:auth-changed')) } catch (_) {}
@@ -194,7 +204,11 @@ const wishlist = ref([])
 const myArticles = ref([])
 const tabCounts = ref({ reviews: 0, wishlist: 0, articles: 0, security: 0 })
 
-const editForm = ref({ nickname: '', avatar_url: '', bio: '', current_password: '', new_password: '' })
+const editForm = ref({ nickname: '', avatar_url: '', bio: '' })
+const passwordForm = ref({ current: '', next: '', confirm: '' })
+const changingPassword = ref(false)
+const passwordError = ref('')
+const passwordSuccess = ref('')
 const avatarFileInput = ref(null)
 const avatarFile = ref(null)
 const avatarPreviewUrl = ref('')
@@ -277,12 +291,13 @@ const loginEvents = ref([])
 const loginEventsPage = ref(1)
 const loginEventsPages = ref(1)
 
-const tabs = [
+const isAdmin = computed(() => profile.value.role === 'admin')
+const tabs = computed(() => [
   { key: 'reviews', label: 'My Reviews' },
   { key: 'wishlist', label: 'Wishlist' },
   { key: 'articles', label: 'Articles' },
-  { key: 'security', label: 'Security' }
-]
+  ...(isAdmin.value ? [{ key: 'security', label: 'Security' }] : [])
+])
 
 const initials = computed(() => {
   const name = profile.value.nickname || profile.value.username || '?'
@@ -301,7 +316,7 @@ const loadProfile = async () => {
   try {
     const res = await usersAPI.me()
     profile.value = res.data
-    editForm.value = { nickname: res.data.nickname || '', avatar_url: res.data.avatar_url || '', bio: res.data.bio || '', current_password: '', new_password: '' }
+    editForm.value = { nickname: res.data.nickname || '', avatar_url: res.data.avatar_url || '', bio: res.data.bio || '' }
   } catch (e) { console.error(e) }
 }
 
@@ -324,13 +339,9 @@ const saveProfile = async () => {
     }
 
     const payload = {}
-    if (editForm.value.nickname) payload.nickname = editForm.value.nickname
-    if (editForm.value.avatar_url && !avatarFile.value) payload.avatar_url = editForm.value.avatar_url
-    if (editForm.value.bio) payload.bio = editForm.value.bio
-    if (editForm.value.new_password) {
-      payload.current_password = editForm.value.current_password
-      payload.new_password = editForm.value.new_password
-    }
+    payload.nickname = editForm.value.nickname
+    payload.bio = editForm.value.bio
+    if (isAdmin.value && editForm.value.avatar_url && !avatarFile.value) payload.avatar_url = editForm.value.avatar_url
     if (Object.keys(payload).length > 0) {
       await usersAPI.updateMe(payload)
     }
@@ -342,6 +353,33 @@ const saveProfile = async () => {
   } catch (e) {
     editError.value = e.response?.data?.error || 'Update failed'
   } finally { saving.value = false }
+}
+
+const changePassword = async () => {
+  passwordError.value = ''
+  passwordSuccess.value = ''
+  if (!passwordForm.value.current || !passwordForm.value.next) {
+    passwordError.value = 'Current password and new password are required.'
+    return
+  }
+  if (passwordForm.value.next.length < 6) {
+    passwordError.value = 'New password must be at least 6 characters.'
+    return
+  }
+  if (passwordForm.value.next !== passwordForm.value.confirm) {
+    passwordError.value = 'New password confirmation does not match.'
+    return
+  }
+  changingPassword.value = true
+  try {
+    await usersAPI.updateMe({ current_password: passwordForm.value.current, new_password: passwordForm.value.next })
+    passwordForm.value = { current: '', next: '', confirm: '' }
+    passwordSuccess.value = 'Password updated successfully. Use the new password next time you sign in.'
+  } catch (e) {
+    passwordError.value = e.response?.data?.error || 'Unable to update the password.'
+  } finally {
+    changingPassword.value = false
+  }
 }
 
 const loadTab = async () => {
@@ -383,9 +421,8 @@ const loadReviews = async () => {
 
 const loadWishlist = async () => {
   try {
-    const res = await wishlistAPI.list({ per_page: 100 })
-    wishlist.value = res.data.items
-    tabCounts.value.wishlist = res.data.total
+    wishlist.value = await wishlistAPI.all()
+    tabCounts.value.wishlist = wishlist.value.length
   } catch (e) { console.error(e) }
 }
 
@@ -419,7 +456,7 @@ onMounted(async () => {
     loadReviews(),
     loadWishlist(),
     loadArticles(),
-    loadLoginEvents()
+    ...(isAdmin.value ? [loadLoginEvents()] : [])
   ])
 })
 </script>
@@ -430,13 +467,27 @@ onMounted(async () => {
   align-items: center;
   gap: 2rem;
   margin-bottom: 1.5rem;
+  padding: 1.5rem;
 }
-.avatar-section { display: flex; align-items: center; gap: 1rem; flex: 1; }
+.avatar-section { display: flex; align-items: center; gap: 1rem; flex: 1; min-width: 0; }
 .avatar-clickable-wrap {
   position: relative;
   cursor: pointer;
   border-radius: 50%;
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 104px;
+  height: 104px;
+  min-width: 104px;
+  min-height: 104px;
+  flex: 0 0 104px;
+  margin: .25rem .5rem .25rem .25rem;
+  padding: 4px;
+  box-sizing: border-box;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  overflow: visible;
 }
 .avatar-clickable-wrap:hover .avatar { box-shadow: 0 0 0 3px rgba(26, 94, 99, 0.25); }
 .avatar-clickable-wrap:hover .avatar-edit-badge { opacity: 1; transform: scale(1); }
@@ -452,20 +503,26 @@ onMounted(async () => {
   transition: opacity 0.15s ease, transform 0.15s ease;
 }
 .avatar {
-  width: 80px;
-  height: 80px;
+  width: 96px;
+  height: 96px;
+  min-width: 96px;
+  min-height: 96px;
+  aspect-ratio: 1 / 1;
   border-radius: 50%;
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-size: 1.5rem;
   font-weight: bold;
-  flex-shrink: 0;
+  flex: 0 0 96px;
+  overflow: hidden;
   transition: box-shadow 0.15s ease;
 }
+.profile-info { min-width: 0; }
 .profile-info h2 { color: #1a5e63; margin-bottom: 0.2rem; }
 .nickname { color: #666; font-size: 0.9rem; }
 .email { color: #888; font-size: 0.85rem; }
@@ -480,6 +537,11 @@ onMounted(async () => {
 .edit-form h3 { color: #1a5e63; margin-bottom: 1rem; }
 .form-group { margin-bottom: 1rem; }
 .form-group label { display: block; margin-bottom: 0.3rem; font-weight: 500; color: #555; }
+.password-card { margin-bottom: 1.5rem; padding: 1.25rem; }
+.password-card h3 { color: #1a5e63; margin: 0 0 .35rem; }
+.form-hint { color: var(--text-mute); font-size: .86rem; margin-bottom: 1rem; }
+.password-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+.password-grid label { display: flex; flex-direction: column; gap: .35rem; font-weight: 500; color: #555; }
 
 .tabs { display: flex; border-bottom: 2px solid #eee; margin-bottom: 1.5rem; }
 .tabs button {
@@ -500,6 +562,7 @@ onMounted(async () => {
 .review-top { display: flex; justify-content: space-between; margin-bottom: 0.3rem; }
 .review-title { font-weight: 600; color: #333; margin-bottom: 0.3rem; }
 .review-content { color: #666; font-size: 0.9rem; margin-bottom: 0.5rem; }
+.review-content { overflow-wrap: anywhere; word-break: break-word; }
 .review-footer { display: flex; align-items: center; gap: 1rem; font-size: 0.8rem; }
 .review-date { color: #aaa; }
 
@@ -558,6 +621,11 @@ onMounted(async () => {
 .evt-status { margin-left: auto; font-size: 0.75rem; padding: 0.1rem 0.5rem; border-radius: 8px; }
 .status-success { background: #e6f9ee; color: #2a9d5c; }
 .status-failure { background: #fee; color: #d44; }
+
+@media (max-width: 760px) {
+  .profile-header { align-items: flex-start; flex-wrap: wrap; }
+  .password-grid { grid-template-columns: 1fr; }
+}
 .status-blocked { background: #fff3e0; color: #e67e00; }
 
 .evt-body { font-size: 0.85rem; color: #555; line-height: 1.6; }

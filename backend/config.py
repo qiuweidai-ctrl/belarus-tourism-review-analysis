@@ -1,8 +1,13 @@
 import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parents[1] / '.env')
 
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'belarus-tourism-secret-key-2026'
+    # 换数据库时改.env，不用改这里的默认连接。
     SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI') or (
         'mysql+pymysql://root:123456@localhost:3306/'
         'belarus_tourism?charset=utf8mb4'

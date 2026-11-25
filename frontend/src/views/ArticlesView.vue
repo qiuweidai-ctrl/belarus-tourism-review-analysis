@@ -115,6 +115,7 @@ const goToPage = (p) => {
   fetchArticles()
 }
 
+// 把页码和分类放在地址里，返回列表时能恢复。
 watch(() => route.query, (q) => {
   if (q.page !== undefined) page.value = Number(q.page)
   if (q.search !== undefined) search.value = q.search

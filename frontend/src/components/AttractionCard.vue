@@ -6,7 +6,9 @@
     @click="open"
     @keydown.enter="open"
   >
-    <div class="card-image" :style="imageStyle">
+    <div class="card-image">
+      <img v-if="attraction.image_url" class="thumbnail-image" :src="attraction.thumbnail_url || attraction.image_url"
+           :alt="attractionName(attraction)" :loading="eager ? 'eager' : 'lazy'" :fetchpriority="eager ? 'high' : 'auto'" decoding="async" />
       <span v-if="attraction.is_featured" class="badge-featured" title="Editor's pick">★ Featured</span>
       <button
         v-if="isLoggedIn"
@@ -17,6 +19,15 @@
         @click.stop="toggleWishlist"
       >
         {{ wishlisted ? '♥' : '♡' }}
+      </button>
+      <button
+        v-if="adminMode"
+        class="delete-attraction-btn"
+        title="Delete attraction"
+        aria-label="Delete attraction"
+        @click.stop="$emit('delete', attraction)"
+      >
+        ×
       </button>
     </div>
 
@@ -30,10 +41,16 @@
 
       <div class="card-stats">
         <span class="rating">
-          <span class="stars" aria-hidden="true">{{ stars }}</span>
-          <strong>{{ attraction.avg_rating.toFixed(1) }}</strong>
+          <strong>{{ formatExternalRating(attraction) }}</strong>
         </span>
-        <span class="reviews-count">{{ attraction.total_reviews }} {{ $t('attractions.reviews') }}</span>
+        <a
+          v-if="externalSourceUrl(attraction)"
+          class="reviews-count source-link"
+          :href="externalSourceUrl(attraction)"
+          target="_blank"
+          rel="noopener noreferrer"
+          @click.stop
+        >{{ externalProvider(attraction) }} · {{ externalReviewCount(attraction) }} {{ externalCountLabel(attraction) }}</a>
       </div>
 
       <p v-if="shortDesc" class="card-desc">{{ shortDesc }}</p>
@@ -41,8 +58,8 @@
       <div class="card-foot">
         <span class="pill">{{ categoryLabel }}</span>
         <span class="spacer"></span>
-        <span class="price" :class="{ free: !attraction.ticket_price }">
-          {{ attraction.ticket_price ? attraction.ticket_price.toFixed(2) + ' BYN' : 'Free' }}
+        <span v-if="attraction.ticket_price != null" class="price" :class="{ free: attraction.ticket_price === 0 }">
+          {{ priceLabel(attraction.ticket_price) }}
         </span>
       </div>
     </div>
@@ -54,28 +71,21 @@ import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { wishlistAPI } from '@/api/client.js'
 import { attractionName, formatCategory, formatPlace } from '@/utils/displayText.js'
+import { externalCountLabel, externalProvider, externalReviewCount, externalSourceUrl, formatExternalRating } from '@/utils/ratings.js'
 
 const props = defineProps({
-  attraction: { type: Object, required: true }
+  attraction: { type: Object, required: true },
+  adminMode: { type: Boolean, default: false },
+  eager: { type: Boolean, default: false }
 })
+defineEmits(['delete'])
 
 const router = useRouter()
 const isLoggedIn = ref(!!localStorage.getItem('token'))
 const wishlisted = ref(false)
+const priceLabel = (price) => price === 0 ? 'Free' : `${price.toFixed(2)} BYN`
 
 const open = () => router.push('/attractions/' + props.attraction.id)
-
-const imageStyle = computed(() => {
-  if (props.attraction.image_url) {
-    return { backgroundImage: `url(${props.attraction.image_url})` }
-  }
-  return { background: 'var(--grad-brand)' }
-})
-
-const stars = computed(() => {
-  const full = Math.round(props.attraction.avg_rating || 0)
-  return '★'.repeat(full) + '☆'.repeat(5 - full)
-})
 
 const shortDesc = computed(() => {
   const d = props.attraction.short_desc || props.attraction.description || ''
@@ -152,6 +162,23 @@ onMounted(async () => {
 }
 .wishlist-btn:hover { background: #fff; transform: scale(1.12); }
 .wishlist-btn.active { color: #e91e63; }
+
+.delete-attraction-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(185, 28, 28, 0.92);
+  color: #fff;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+.delete-attraction-btn:hover { background: #991b1b; transform: scale(1.06); }
 
 .card-body { padding: .9rem 1rem 1rem; display: flex; flex-direction: column; flex: 1 1 auto; }
 

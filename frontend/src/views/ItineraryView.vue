@@ -6,15 +6,15 @@
         <p class="page-sub">Plan your day by day. Everything saves to this browser, so closing the tab will not lose it.</p>
       </div>
       <div class="row head-actions">
-        <button class="btn btn-ghost btn-sm" type="button" @click="downloadText" :disabled="!days.length">Download as text</button>
-        <button class="btn btn-ghost btn-sm" type="button" @click="print" :disabled="!days.length">Print / Save PDF</button>
+        <button class="btn btn-ghost btn-sm" type="button" @click="downloadText" :disabled="!days.length || !catalogReady">Download as text</button>
+        <button class="btn btn-ghost btn-sm" type="button" @click="print" :disabled="!days.length || !catalogReady">Print / Save PDF</button>
       </div>
     </header>
 
-    <section v-if="days.length" class="grid grid-4 stats fade-up no-print">
+    <section v-if="days.length && catalogReady" class="grid grid-4 stats fade-up no-print">
       <StatCard label="Days" :value="days.length" icon="📆" color="var(--brand-600)" />
       <StatCard label="Stops" :value="totalStops" icon="📍" color="var(--info)" />
-      <StatCard label="Estimated total" :value="totalCost" :decimals="2" icon="🎟️" color="var(--accent-600)" suffix=" BYN" />
+      <StatCard v-if="allPricesKnown" label="Estimated total" :value="totalCost" :decimals="2" icon="🎟️" color="var(--accent-600)" suffix=" BYN" />
       <StatCard label="Average rating" :value="avgRating" :decimals="2" icon="⭐" color="var(--success)" suffix=" / 5" />
     </section>
 
@@ -25,8 +25,10 @@
       </label>
     </div>
 
+    <p v-if="catalogError" class="alert alert-error">{{ catalogError }}</p>
+    <p v-else-if="!catalogReady" class="empty-state">Refreshing attraction data…</p>
     <EmptyState
-      v-if="!days.length"
+      v-else-if="!days.length"
       icon="🧳"
       title="Start by adding a day"
       hint="Each day is a list of stops with notes. You can add as many days as you like and reorder them however you want."
@@ -70,13 +72,14 @@
           >
             <span class="handle no-print" title="Drag to reorder">⋮⋮</span>
             <span class="num">{{ si + 1 }}</span>
-            <div class="thumb" :style="imgStyle(stop.attraction)"><span v-if="!stop.attraction.image_url" class="ph">🏛️</span></div>
+            <div class="thumb"><img v-if="stop.attraction.image_url" class="thumbnail-image" :src="stop.attraction.thumbnail_url || stop.attraction.image_url" :alt="stop.attraction.name" loading="lazy" decoding="async" /><span v-else class="ph">🏛️</span></div>
             <div class="stop-meta">
               <strong>{{ stop.attraction.name }}</strong>
-              <em>{{ stop.attraction.city || stop.attraction.region || '—' }} · {{ Number(stop.attraction.avg_rating || 0).toFixed(1) }} ★</em>
+              <em>{{ stop.attraction.city || stop.attraction.region || '—' }} · {{ formatExternalRating(stop.attraction) }}</em>
+              <ExternalRatingSource :attraction="stop.attraction" :show-score="false" />
             </div>
             <input class="note no-print" v-model="stop.note" placeholder="Note (optional)" />
-            <span class="stop-price">{{ stop.attraction.ticket_price ? stop.attraction.ticket_price.toFixed(2) + ' BYN' : 'Free' }}</span>
+            <span v-if="stop.attraction.ticket_price != null" class="stop-price">{{ priceLabel(stop.attraction.ticket_price) }}</span>
             <div class="row stop-actions no-print">
               <button class="btn btn-ghost btn-sm" type="button" :disabled="si === 0" @click="moveStop(di, si, -1)">↑</button>
               <button class="btn btn-ghost btn-sm" type="button" :disabled="si === d.items.length - 1" @click="moveStop(di, si, 1)">↓</button>
@@ -86,6 +89,9 @@
           </li>
         </ul>
         <p v-else class="empty-day">No stops yet for this day.</p>
+        <p v-if="d.unavailableItems?.length" class="empty-day">
+          {{ d.unavailableItems.length }} saved stop(s) are no longer in the public catalog. Their notes are retained in this browser.
+        </p>
 
         <div class="day-foot no-print">
           <button class="btn btn-soft btn-sm" type="button" @click="openPicker(di)">+ Add a stop</button>
@@ -93,7 +99,7 @@
       </article>
     </section>
 
-    <div v-if="days.length" class="add-day-bar no-print">
+    <div v-if="days.length && catalogReady" class="add-day-bar no-print">
       <button class="btn btn-primary" type="button" @click="addDay">+ Add another day</button>
     </div>
 
@@ -115,10 +121,10 @@
             :disabled="alreadyAdded(a.id, pickerDay)"
             @click="pickStop(a)"
           >
-            <div class="thumb" :style="imgStyle(a)"><span v-if="!a.image_url" class="ph">🏛️</span></div>
+            <div class="thumb"><img v-if="a.image_url" class="thumbnail-image" :src="a.thumbnail_url || a.image_url" :alt="a.name" loading="lazy" decoding="async" /><span v-else class="ph">🏛️</span></div>
             <div class="meta">
               <strong>{{ a.name }}</strong>
-              <em>{{ a.city || a.region || '—' }} · {{ cap(a.category) }} · {{ Number(a.avg_rating || 0).toFixed(1) }} ★</em>
+              <em>{{ a.city || a.region || '—' }} · {{ cap(a.category) }} · {{ formatExternalRating(a) }} · {{ externalProvider(a) }}</em>
             </div>
             <span v-if="alreadyAdded(a.id, pickerDay)" class="pill">Already in day</span>
             <span v-else class="pill pill-brand">Add</span>
@@ -135,6 +141,9 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { attractionsAPI } from '@/api/client.js'
 import StatCard from '../components/StatCard.vue'
 import EmptyState from '../components/EmptyState.vue'
+import ExternalRatingSource from '../components/ExternalRatingSource.vue'
+import { externalProvider, externalScore, formatExternalRating } from '@/utils/ratings.js'
+import { refreshItineraryDays } from '@/utils/itinerary.js'
 
 const STORAGE = 'belarus-itinerary'
 
@@ -144,6 +153,8 @@ const allAttractions = ref([])
 const printing = ref(false)
 const pickerDay = ref(null)
 const pickerSearch = ref('')
+const catalogReady = ref(false)
+const catalogError = ref('')
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
 
@@ -153,10 +164,12 @@ const load = () => {
     if (!raw) { days.value = []; return }
     const data = JSON.parse(raw)
     tripName.value = data.tripName || 'My Belarus trip'
-    days.value = (data.days || []).map((d) => ({ id: d.id || uid(), title: d.title || 'New day', items: d.items || [] }))
+    days.value = (data.days || []).map((d) => ({ id: d.id || uid(), title: d.title || 'New day', items: d.items || [], unavailableItems: d.unavailableItems || [] }))
   } catch (_) { days.value = [] }
 }
+// 行程保存在当前浏览器，刷新页面后还能继续编辑。
 const save = () => {
+  if (!catalogReady.value) return
   localStorage.setItem(STORAGE, JSON.stringify({ tripName: tripName.value, days: days.value }))
 }
 
@@ -176,21 +189,16 @@ const moveStop = (di, si, dir) => {
 }
 const alreadyAdded = (id, di) => days.value[di].items.some((s) => s.attraction.id === id)
 
-const stars = (r) => {
-  const full = Math.round(r || 0)
-  return '★'.repeat(full) + '☆'.repeat(5 - full)
-}
 const cap = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '—'
-const imgStyle = (a) => a.image_url
-  ? { backgroundImage: `url(${a.image_url})` }
-  : { background: 'var(--grad-brand)' }
 const dayCost = (d) => d.items.reduce((s, x) => s + (x.attraction.ticket_price || 0), 0)
+const priceLabel = (price) => price === 0 ? 'Free' : `${price.toFixed(2)} BYN`
 const totalStops = computed(() => days.value.reduce((s, d) => s + d.items.length, 0))
+const allPricesKnown = computed(() => days.value.flatMap((d) => d.items).every((x) => x.attraction.ticket_price != null))
 const totalCost = computed(() => days.value.reduce((s, d) => s + dayCost(d), 0).toFixed(2))
 const avgRating = computed(() => {
   const all = days.value.flatMap((d) => d.items)
   if (!all.length) return 0
-  return all.reduce((s, x) => s + (x.attraction.avg_rating || 0), 0) / all.length
+  return all.reduce((s, x) => s + (externalScore(x.attraction) || 0), 0) / all.length
 })
 let dragInfo = null
 const onDragStart = (e, di, si) => { dragInfo = { di, si }; e.dataTransfer.effectAllowed = 'move' }
@@ -207,8 +215,7 @@ const openPicker = async (di) => {
   pickerDay.value = di
   pickerSearch.value = ''
   if (!allAttractions.value.length) {
-    const res = await attractionsAPI.list({ per_page: 200 })
-    allAttractions.value = res.data.attractions
+    allAttractions.value = await attractionsAPI.all()
   }
 }
 const closePicker = () => { pickerDay.value = null }
@@ -230,8 +237,8 @@ const downloadText = () => {
     lines.push(`Day ${i + 1} - ${d.title || ''}`.trim())
     if (d.items.length) {
       d.items.forEach((s, j) => {
-        const price = s.attraction.ticket_price ? s.attraction.ticket_price.toFixed(2) + ' BYN' : 'Free'
-        lines.push(`  ${j + 1}. ${s.attraction.name} (${s.attraction.city || s.attraction.region || '—'}) — ${price}`)
+        const price = s.attraction.ticket_price == null ? '' : ` — ${priceLabel(s.attraction.ticket_price)}`
+        lines.push(`  ${j + 1}. ${s.attraction.name} (${s.attraction.city || s.attraction.region || '—'})${price}`)
         if (s.note) lines.push(`     note: ${s.note}`)
       })
     } else {
@@ -247,7 +254,16 @@ const downloadText = () => {
 const print = () => { printing.value = true; setTimeout(() => { window.print(); printing.value = false }, 50) }
 
 watch([tripName, days], save, { deep: true })
-onMounted(load)
+onMounted(async () => {
+  load()
+  try {
+    allAttractions.value = await attractionsAPI.all()
+    days.value = refreshItineraryDays(days.value, allAttractions.value)
+    catalogReady.value = true
+  } catch (_) {
+    catalogError.value = 'Could not refresh attraction data. Your saved trip is unchanged; reload to try again.'
+  }
+})
 </script>
 
 <style scoped>

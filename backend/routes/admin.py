@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import User, Review, Attraction, LoginEvent, db
 from repositories import UserRepository, ReviewRepository, AttractionRepository
 from sqlalchemy import func
+from services.attraction_presenter import serialize_attraction
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -11,6 +12,7 @@ review_repo = ReviewRepository()
 attraction_repo = AttractionRepository()
 
 
+# 管理接口还要在服务端检查角色。
 def require_admin(f):
     from functools import wraps
     @wraps(f)
@@ -201,20 +203,11 @@ def list_all_attractions():
     per_page = request.args.get('per_page', 20, type=int)
     featured = request.args.get('featured', None, type=lambda x: x.lower() == 'true')
 
-    pagination = attraction_repo.paginate(page=page, per_page=per_page, is_featured=featured)
+    pagination = attraction_repo.paginate(
+        page=page, per_page=per_page, is_featured=featured, active_only=False
+    )
     return jsonify({
-        'attractions': [{
-            'id': a.id,
-            'name': a.name,
-            'category': a.category,
-            'region': a.region,
-            'avg_rating': round(float(a.avg_rating or 0), 2),
-            'total_reviews': a.total_reviews or 0,
-            'view_count': a.view_count or 0,
-            'is_featured': bool(a.is_featured),
-            'is_verified': bool(a.is_verified),
-            'created_at': a.created_at.isoformat() if a.created_at else None
-        } for a in pagination.items],
+        'attractions': [serialize_attraction(a) for a in pagination.items],
         'total': pagination.total,
         'pages': pagination.pages
     }), 200

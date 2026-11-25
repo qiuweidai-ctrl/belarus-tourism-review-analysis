@@ -13,6 +13,7 @@ class UserRepository(BaseRepository):
     def find_by_email(self, email):
         return User.query.filter_by(email=email).first()
 
+    # 注册时处理密码，数据库里不存明文。
     def create_user(self, username, email, password, role='user', nickname=None):
         user = User(
             username=username,

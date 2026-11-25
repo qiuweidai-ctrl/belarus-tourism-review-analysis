@@ -1,14 +1,18 @@
-
 import numpy as np
 from datetime import datetime, timedelta
 from models import db, Attraction, Review
 from sqlalchemy import func
 import math
+from collections import defaultdict
+from sqlalchemy.orm import load_only
+from services.attraction_presenter import rating_payload
+from services.thumbnails import thumbnail_url
 
 
 DECAY_HALF_LIFE_DAYS = 30
 
 
+# 较新的评价对热度影响更大。
 def calculate_time_decay(created_at: datetime) -> float:
     if not created_at:
         return 1.0
@@ -29,24 +33,19 @@ def calculate_trending_score(attraction_id: int, days: int = 30) -> float:
     if not attraction:
         return 0.0
 
-    rating_score = float(attraction.avg_rating) / 5.0
-
     recent_time = datetime.utcnow() - timedelta(days=days)
     recent_review_count = Review.query.filter(
         Review.attraction_id == attraction_id,
         Review.created_at >= recent_time,
-        Review.status == 'published'
+        Review.status == 'published', Review.deleted_at.is_(None)
     ).count()
 
     review_score = math.log(1 + recent_review_count) / math.log(1 + max(recent_review_count, 100))
 
-    sentiment_score = float(attraction.sentiment_score) if attraction.sentiment_score else 0.5
-    sentiment_score = (sentiment_score + 1) / 2
-
     recent_reviews = Review.query.filter(
         Review.attraction_id == attraction_id,
         Review.created_at >= recent_time,
-        Review.status == 'published'
+        Review.status == 'published', Review.deleted_at.is_(None)
     ).order_by(Review.created_at.desc()).limit(10).all()
 
     if recent_reviews:
@@ -56,35 +55,73 @@ def calculate_trending_score(attraction_id: int, days: int = 30) -> float:
             time_weights.append(weight)
         avg_time_decay = np.mean(time_weights)
     else:
-        avg_time_decay = 0.1
+        avg_time_decay = 0.0
 
+    view_score = min(1.0, math.log1p(attraction.view_count or 0) / math.log1p(10000))
+    wishlist_score = min(1.0, math.log1p(attraction.wishlist_count or 0) / math.log1p(1000))
     trending_score = (
-        rating_score * 0.25 +
-        review_score * 0.35 +
-        sentiment_score * 0.15 +
-        avg_time_decay * 0.25
+        view_score * 0.35 + wishlist_score * 0.30 +
+        review_score * 0.20 + avg_time_decay * 0.15
     ) * 100
 
     return round(trending_score, 2)
 
 
-def get_trending_scores(limit: int = 20, days: int = 30) -> list:
-    attractions = Attraction.query.filter_by(is_verified=True).all()
+def _recent_activity(days, category=None):
+    query = db.session.query(Review.attraction_id, Review.created_at).join(Attraction).filter(
+        Attraction.catalog_status == 'active', Review.status == 'published',
+        Review.deleted_at.is_(None), Review.created_at >= datetime.utcnow() - timedelta(days=days),
+    )
+    if category:
+        query = query.filter(Attraction.category == category)
+    counts, dates = defaultdict(int), defaultdict(list)
+    for attraction_id, created_at in query.order_by(Review.created_at.desc(), Review.id.desc()):
+        counts[attraction_id] += 1
+        if len(dates[attraction_id]) < 10:
+            dates[attraction_id].append(created_at)
+    return counts, dates
 
+
+def _activity_score(attraction, count, dates):
+    review_score = math.log1p(count) / math.log1p(max(count, 100))
+    decay = sum(calculate_time_decay(date) for date in dates) / len(dates) if dates else 0.0
+    views = min(1.0, math.log1p(attraction.view_count or 0) / math.log1p(10000))
+    saves = min(1.0, math.log1p(attraction.wishlist_count or 0) / math.log1p(1000))
+    return round((views * .35 + saves * .30 + review_score * .20 + decay * .15) * 100, 2)
+
+
+def get_trending_scores(limit: int = 20, days: int = 30, category=None) -> list:
+    fields = ('id', 'name', 'location', 'category', 'image_url', 'view_count', 'wishlist_count',
+              'total_reviews', 'avg_rating', 'sentiment_score')
+    query = Attraction.query.options(load_only(*(getattr(Attraction, field) for field in fields))).filter_by(catalog_status='active')
+    if category:
+        query = query.filter(Attraction.category == category)
+    attractions = query.order_by(Attraction.id).all()
+    counts, dates = _recent_activity(days, category)
+    ranked = [(attraction, _activity_score(attraction, counts[attraction.id], dates[attraction.id]))
+              for attraction in attractions]
+    ranked.sort(key=lambda item: item[1], reverse=True)
     trending_data = []
-    for attraction in attractions:
-        score = calculate_trending_score(attraction.id, days)
+    for attraction, score in ranked[:max(0, limit)]:
+        rating_data = rating_payload(attraction)
         trending_data.append({
             'attraction_id': attraction.id,
             'name': attraction.name,
             'score': score,
-            'avg_rating': float(attraction.avg_rating),
-            'total_reviews': attraction.total_reviews
+            'trending_score': score,
+            'location': attraction.location,
+            'category': attraction.category,
+            'image_url': attraction.image_url,
+            'thumbnail_url': thumbnail_url(attraction.image_url),
+            'primary_external_rating': rating_data['primary_external_rating'],
+            'local_rating': rating_data['local_rating'],
+            'view_count': attraction.view_count or 0,
+            'wishlist_count': attraction.wishlist_count or 0,
+            'total_reviews': attraction.total_reviews or 0,
+            'metric_source': 'first_party_engagement'
         })
 
-    trending_data.sort(key=lambda x: x['score'], reverse=True)
-
-    return trending_data[:limit]
+    return trending_data
 
 
 def categorize_trending(trending_data: list) -> dict:
@@ -109,11 +146,11 @@ def categorize_trending(trending_data: list) -> dict:
             ).count()
             recent_ratio = recent_count / total_reviews
 
-        if item['avg_rating'] >= 4.0 and recent_ratio < 0.3:
+        if item['view_count'] >= 100 and recent_ratio < 0.3:
             categories['stable_classics'].append(item)
         elif recent_ratio > 0.5 or item['score'] > 60:
             categories['rising_stars'].append(item)
-        elif item['avg_rating'] >= 3.5 and item['score'] < 40:
+        elif item['wishlist_count'] > 0 and item['score'] < 40:
             categories['hidden_gems'].append(item)
 
     return categories
@@ -160,25 +197,7 @@ def get_weekly_trend(attraction_id: int, weeks: int = 8) -> list:
 
 
 def get_trending_by_category(category: str, limit: int = 10) -> list:
-    attractions = Attraction.query.filter_by(
-        category=category,
-        is_verified=True
-    ).all()
-
-    trending = []
-    for attraction in attractions:
-        score = calculate_trending_score(attraction.id)
-        trending.append({
-            'attraction_id': attraction.id,
-            'name': attraction.name,
-            'score': score,
-            'avg_rating': float(attraction.avg_rating),
-            'total_reviews': attraction.total_reviews
-        })
-
-    trending.sort(key=lambda x: x['score'], reverse=True)
-
-    return trending[:limit]
+    return get_trending_scores(limit, category=category)
 
 
 def compare_attractions(attraction_ids: list) -> dict:
@@ -194,8 +213,9 @@ def compare_attractions(attraction_ids: list) -> dict:
             comparison[aid] = {
                 'name': attraction.name,
                 'current_score': score,
-                'avg_rating': float(attraction.avg_rating),
-                'total_reviews': attraction.total_reviews,
+                'primary_external_rating': rating_payload(attraction)['primary_external_rating'],
+                'local_rating': rating_payload(attraction)['local_rating'],
+                'total_reviews': attraction.total_reviews or 0,
                 'weekly_trend': weekly
             }
 

@@ -1,4 +1,3 @@
-
 import numpy as np
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
@@ -23,6 +22,7 @@ def calculate_review_quality(review: Review) -> dict:
 
     helpful_score = min(review.helpful_count / 20.0, 1.0)
 
+    # 质量分由长度、信息量、情感和有用票数加权得到。
     weights = {
         'length': 0.15,
         'information': 0.30,

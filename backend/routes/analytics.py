@@ -5,7 +5,10 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
 from sqlalchemy import func
 
-from models import db, Attraction, Review, User, Article, Question
+from models import db, Attraction, ExternalRating, ExternalReview, Review, User, Article, Question
+from services.attraction_presenter import serialize_attraction, serialize_card
+from services.catalog_cache import cached_catalog
+from services.catalog_queries import rated_query, global_mean, external_score
 
 analytics_bp = Blueprint('analytics', __name__)
 
@@ -29,6 +32,20 @@ STOPWORDS = {
 WORD_RE = re.compile(r"[A-Za-z]{3,}")
 
 
+# 统计页面的数据从数据库汇总。
+def _active_catalog():
+    def load():
+        rows = rated_query(Attraction.category, Attraction.city, Attraction.region,
+                           Attraction.ticket_price, external_score().label('score')).all()
+        items = [{
+            'category': row.category, 'city': row.city, 'region': row.region,
+            'ticket_price': float(row.ticket_price) if row.ticket_price is not None else None,
+            'primary_external_rating': {'normalized_score': round(float(row.score), 2)},
+        } for row in rows]
+        return [], items, global_mean()
+    return cached_catalog('statistics', load)
+
+
 def _norm(value):
     if value is None:
         return 0.0
@@ -40,19 +57,27 @@ def _norm(value):
 
 @analytics_bp.route('/overview', methods=['GET'])
 def overview():
-    total_attractions = Attraction.query.count()
-    total_reviews = Review.query.filter_by(status='published').count()
+    total_attractions, avg_price, total_views = db.session.query(
+        func.count(Attraction.id), func.avg(Attraction.ticket_price), func.sum(Attraction.view_count)
+    ).filter(Attraction.catalog_status == 'active').one()
+    external_mean = global_mean()
+    total_reviews = Review.query.join(Attraction).filter(
+        Review.status == 'published', Review.deleted_at.is_(None), Attraction.catalog_status == 'active'
+    ).count()
     total_users = User.query.count()
     total_articles = Article.query.count()
     total_questions = Question.query.count()
 
-    avg_rating = db.session.query(func.avg(Review.rating)).scalar() or 0
-    avg_price = db.session.query(func.avg(Attraction.ticket_price)).scalar() or 0
-    total_views = db.session.query(func.sum(Attraction.view_count)).scalar() or 0
+    local_avg_rating = db.session.query(func.avg(Review.rating)).join(Attraction).filter(
+        Review.status == 'published', Review.deleted_at.is_(None), Attraction.catalog_status == 'active'
+    ).scalar()
 
     sentiment_rows = dict(
         db.session.query(Review.sentiment_label, func.count(Review.id))
-        .filter(Review.sentiment_label.isnot(None))
+        .join(Attraction).filter(
+            Review.sentiment_label.isnot(None), Attraction.catalog_status == 'active',
+            Review.status == 'published', Review.deleted_at.is_(None)
+        )
         .group_by(Review.sentiment_label).all()
     )
     total_sentiment = sum(sentiment_rows.values()) or 0
@@ -63,8 +88,10 @@ def overview():
         'users': total_users,
         'articles': total_articles,
         'questions': total_questions,
-        'avg_rating': _norm(avg_rating),
-        'avg_price': _norm(avg_price),
+        'avg_rating': _norm(external_mean),
+        'external_avg_rating': _norm(external_mean),
+        'local_avg_rating': _norm(local_avg_rating) if local_avg_rating is not None else None,
+        'avg_price': _norm(avg_price) if avg_price is not None else None,
         'total_views': int(total_views or 0),
         'sentiment': {
             'positive': sentiment_rows.get('positive', 0),
@@ -77,65 +104,42 @@ def overview():
 
 @analytics_bp.route('/rating-distribution', methods=['GET'])
 def rating_distribution():
-    rows = dict(
-        db.session.query(Review.rating, func.count(Review.id))
-        .filter(Review.status == 'published')
-        .group_by(Review.rating).all()
+    _, catalog, _ = _active_catalog()
+    score_counts = Counter(
+        item['primary_external_rating']['normalized_score']
+        for item in catalog if item['primary_external_rating']
     )
-    stars = [{'rating': s, 'count': rows.get(s, 0)} for s in (1, 2, 3, 4, 5)]
+    scores = [{'rating': score, 'count': count} for score, count in sorted(score_counts.items())]
+    grouped = {}
+    for item in catalog:
+        bucket = grouped.setdefault(item['category'], {'ratings': [], 'prices': []})
+        bucket['ratings'].append(item['primary_external_rating']['normalized_score'])
+        if item['ticket_price'] is not None:
+            bucket['prices'].append(item['ticket_price'])
+    categories = sorted(({
+        'category': category, 'count': len(values['ratings']),
+        'avg_rating': _norm(sum(values['ratings']) / len(values['ratings'])),
+        'avg_price': _norm(sum(values['prices']) / len(values['prices'])) if values['prices'] else None,
+    } for category, values in grouped.items()), key=lambda x: -x['count'])
 
-    cat_rows = db.session.query(
-        Attraction.category,
-        func.count(Attraction.id),
-        func.avg(Attraction.avg_rating),
-        func.avg(Attraction.ticket_price)
-    ).group_by(Attraction.category).all()
-
-    categories = sorted(
-        (
-            {
-                'category': c,
-                'count': n,
-                'avg_rating': _norm(r),
-                'avg_price': _norm(p),
-            }
-            for c, n, r, p in cat_rows
-        ),
-        key=lambda x: -x['count'],
-    )
-
-    return jsonify({'stars': stars, 'categories': categories}), 200
+    return jsonify({'scores': scores, 'stars': scores, 'scale': 5, 'categories': categories}), 200
 
 
 @analytics_bp.route('/region-distribution', methods=['GET'])
 def region_distribution():
-    rows = db.session.query(
-        Attraction.region,
-        func.count(Attraction.id),
-        func.avg(Attraction.avg_rating)
-    ).group_by(Attraction.region).all()
-
-    regions = sorted(
-        (
-            {'region': r or 'Unknown', 'count': n, 'avg_rating': _norm(a)}
-            for r, n, a in rows
-        ),
-        key=lambda x: -x['count'],
-    )
-
-    city_rows = db.session.query(
-        Attraction.city,
-        func.count(Attraction.id),
-        func.avg(Attraction.avg_rating)
-    ).group_by(Attraction.city).all()
-
-    cities = sorted(
-        (
-            {'city': c or 'Unknown', 'count': n, 'avg_rating': _norm(a)}
-            for c, n, a in city_rows
-        ),
-        key=lambda x: -x['count'],
-    )[:20]
+    _, catalog, _ = _active_catalog()
+    def aggregate(field):
+        grouped = {}
+        for item in catalog:
+            grouped.setdefault(item.get(field) or 'Unknown', []).append(
+                item['primary_external_rating']['normalized_score']
+            )
+        return sorted(({
+            field: name, 'count': len(scores),
+            'avg_rating': _norm(sum(scores) / len(scores)),
+        } for name, scores in grouped.items()), key=lambda x: -x['count'])
+    regions = aggregate('region')
+    cities = aggregate('city')[:20]
 
     return jsonify({'regions': regions, 'cities': cities}), 200
 
@@ -154,7 +158,8 @@ PRICE_BANDS = [
 def price_analysis():
     prices = [
         float(p) for (p,) in db.session.query(Attraction.ticket_price)
-        .filter(Attraction.ticket_price.isnot(None)).all()
+        .filter(Attraction.ticket_price.isnot(None),
+                Attraction.catalog_status == 'active').all()
     ]
 
     bands = []
@@ -185,7 +190,9 @@ def review_trend():
         func.date_format(Review.created_at, '%Y-%m').label('month'),
         func.count(Review.id),
         func.avg(Review.rating),
-    ).filter(Review.status == 'published').group_by('month').order_by('month').all()
+    ).join(Attraction).filter(
+        Review.status == 'published', Attraction.catalog_status == 'active'
+    ).group_by('month').order_by('month').all()
 
     points = [
         {'month': m, 'count': n, 'avg_rating': _norm(a)} for m, n, a in rows
@@ -193,7 +200,9 @@ def review_trend():
 
     type_rows = dict(
         db.session.query(Review.travel_type, func.count(Review.id))
-        .filter(Review.travel_type.isnot(None))
+        .join(Attraction).filter(
+            Review.travel_type.isnot(None), Attraction.catalog_status == 'active'
+        )
         .group_by(Review.travel_type).all()
     )
     travel_types = [
@@ -208,7 +217,9 @@ def review_trend():
 def sentiment_breakdown():
     overall = dict(
         db.session.query(Review.sentiment_label, func.count(Review.id))
-        .filter(Review.sentiment_label.isnot(None))
+        .join(Attraction).filter(
+            Review.sentiment_label.isnot(None), Attraction.catalog_status == 'active'
+        )
         .group_by(Review.sentiment_label).all()
     )
 
@@ -216,7 +227,9 @@ def sentiment_breakdown():
         Attraction.category,
         Review.sentiment_label,
         func.count(Review.id),
-    ).join(Attraction, Review.attraction_id == Attraction.id).group_by(
+    ).join(Attraction, Review.attraction_id == Attraction.id).filter(
+        Attraction.catalog_status == 'active'
+    ).group_by(
         Attraction.category, Review.sentiment_label
     ).all()
 
@@ -251,37 +264,39 @@ def sentiment_breakdown():
     }), 200
 
 
-TOP_METRICS = {
-    'rating': 'avg_rating',
-    'reviews': 'total_reviews',
-    'views': 'view_count',
-    'wishlist': 'wishlist_count',
-}
-
-
 @analytics_bp.route('/top-attractions', methods=['GET'])
 def top_attractions():
     metric = request.args.get('metric', 'rating', type=str)
-    limit = min(request.args.get('limit', 10, type=int), 50)
-    column = TOP_METRICS.get(metric, 'avg_rating')
-
-    rows = db.session.query(Attraction).order_by(
-        getattr(Attraction, column).desc()
-    ).limit(limit).all()
-
-    items = [{
-        'id': a.id,
-        'name': a.name,
-        'city': a.city,
-        'region': a.region,
-        'category': a.category,
-        'image_url': a.image_url,
-        'avg_rating': _norm(a.avg_rating),
-        'total_reviews': a.total_reviews or 0,
-        'view_count': a.view_count or 0,
-        'wishlist_count': a.wishlist_count or 0,
-        'ticket_price': _norm(a.ticket_price),
-    } for a in rows]
+    limit = max(1, min(request.args.get('limit', 10, type=int), 50))
+    excerpt_counts = db.session.query(
+        ExternalReview.attraction_id, func.count(ExternalReview.id)
+    ).group_by(ExternalReview.attraction_id).subquery()
+    local_counts = db.session.query(
+        Review.attraction_id, func.count(Review.id)
+    ).filter(
+        Review.status == 'published',
+        Review.deleted_at.is_(None)
+    ).group_by(Review.attraction_id).subquery()
+    stored_count = func.coalesce(excerpt_counts.c[1], 0) + func.coalesce(local_counts.c[1], 0)
+    mean = global_mean()
+    rating_count = ExternalRating.review_count
+    ranking_score = (rating_count * external_score() + 5.0 * mean) / (rating_count + 5.0)
+    orders = {'rating': ranking_score, 'reviews': stored_count,
+              'views': Attraction.view_count, 'wishlist': Attraction.wishlist_count}
+    query = rated_query(Attraction, stored_count.label('stored_review_count')).outerjoin(
+        excerpt_counts, excerpt_counts.c.attraction_id == Attraction.id
+    ).outerjoin(local_counts, local_counts.c.attraction_id == Attraction.id)
+    rows = query.order_by(orders.get(metric, ranking_score).desc(), Attraction.id.asc()).limit(limit).all()
+    items = []
+    for attraction, count in rows:
+        item = serialize_card(attraction, mean) if request.args.get('view') == 'card' else serialize_attraction(attraction, mean)
+        item['stored_review_count'] = int(count)
+        item.setdefault('field_sources', {})
+        item['field_sources']['stored_review_count'] = {
+            'type': 'system_derived', 'provider': 'Site database',
+            'method': 'Stored external excerpts plus published, non-deleted site reviews',
+        }
+        items.append(item)
 
     return jsonify({'metric': metric, 'items': items}), 200
 
@@ -302,7 +317,7 @@ def keywords():
     if scope in ('attractions', 'both'):
         for name, desc, loc in db.session.query(
             Attraction.name, Attraction.short_desc, Attraction.location
-        ).all():
+        ).filter(Attraction.catalog_status == 'active').all():
             texts.extend([name, desc, loc])
 
     counter = Counter()
@@ -355,7 +370,10 @@ def export_csv(dataset):
             return jsonify({'error': 'Admin access required'}), 403
 
     columns, model = EXPORT_QUERIES[dataset]
-    rows = db.session.query(model).all()
+    query = db.session.query(model)
+    if model is Attraction:
+        query = query.filter(Attraction.catalog_status == 'active')
+    rows = query.all()
 
     buf = _io.StringIO()
     writer = csv.writer(buf)

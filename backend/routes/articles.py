@@ -7,6 +7,7 @@ from datetime import datetime
 articles_bp = Blueprint('articles', __name__)
 
 
+# 文章接口，修改和删除时检查作者身份。
 def _serialize_article(a, user_id=None):
     liked = False
     if user_id:
@@ -25,7 +26,7 @@ def _serialize_article(a, user_id=None):
         'tags': a.tags_json,
         'view_count': a.view_count or 0,
         'like_count': a.like_count or 0,
-        'comment_count': a.comment_count or 0,
+        'comment_count': ArticleComment.query.filter_by(article_id=a.id).count(),
         'is_featured': bool(a.is_featured),
         'is_published': bool(a.is_published),
         'created_at': a.created_at.isoformat() if a.created_at else None,
@@ -201,8 +202,9 @@ def list_comments(article_id):
 @jwt_required()
 def create_comment(article_id):
     user_id = int(get_jwt_identity())
-    data = request.get_json()
-    if not data.get('content'):
+    data = request.get_json() or {}
+    content = str(data.get('content') or '').strip()
+    if not content:
         return jsonify({'error': 'content is required'}), 400
 
     article = Article.query.get(article_id)
@@ -213,9 +215,14 @@ def create_comment(article_id):
         article_id=article_id,
         user_id=user_id,
         parent_id=data.get('parent_id'),
-        content=data['content']
+        content=content
     )
     db.session.add(comment)
-    article.comment_count = (article.comment_count or 0) + 1
+    db.session.flush()
+    article.comment_count = ArticleComment.query.filter_by(article_id=article_id).count()
     db.session.commit()
-    return jsonify({'id': comment.id, 'created_at': comment.created_at.isoformat()}), 201
+    return jsonify({
+        'id': comment.id,
+        'created_at': comment.created_at.isoformat(),
+        'comment_count': article.comment_count
+    }), 201

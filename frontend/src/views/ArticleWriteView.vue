@@ -65,6 +65,7 @@ const submitting = ref(false)
 const error = ref('')
 const success = ref('')
 
+// 带文章编号进入时，先读取原文用于编辑。
 const loadArticle = async () => {
   if (!route.params.id) return
   try {
@@ -81,8 +82,7 @@ const loadArticle = async () => {
 
 const loadAttractions = async () => {
   try {
-    const res = await attractionsAPI.list({ per_page: 100 })
-    attractions.value = res.data.attractions
+    attractions.value = await attractionsAPI.all()
   } catch (e) { console.error(e) }
 }
 

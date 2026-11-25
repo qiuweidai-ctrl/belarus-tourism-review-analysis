@@ -10,6 +10,13 @@ class SentimentService:
     def analyze(self, text: str) -> dict:
         start_time = time.time()
 
+        # 没填API密钥时，先用关键词规则分析。
+        if not Config.DEEPSEEK_API_KEY:
+            result = self._fallback_analysis(text)
+            result['processing_time_ms'] = 0
+            result['method'] = 'fallback_keyword'
+            return result
+
         try:
             result = self._call_deepseek(text)
             elapsed_ms = int((time.time() - start_time) * 1000)

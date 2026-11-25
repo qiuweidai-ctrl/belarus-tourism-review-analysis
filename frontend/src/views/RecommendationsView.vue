@@ -37,7 +37,7 @@
 
       <div class="section">
         <h2>🔥 Trending Now (Weighted Algorithm)</h2>
-        <p class="section-desc">Based on recent reviews, ratings, and sentiment scores with time decay</p>
+        <p class="section-desc">System-calculated site engagement; visitor ratings below come from external platforms.</p>
         <div class="trending-grid">
           <div v-for="item in trendingAttractions" :key="item.attraction_id" class="trending-card card" @click="goToAttraction(item.attraction_id)">
             <div class="trending-score">
@@ -48,8 +48,7 @@
               <h3>{{ item.name }}</h3>
               <p class="trending-location">{{ item.location }}</p>
               <div class="trending-meta">
-                <span class="rating">★ {{ item.avg_rating }}</span>
-                <span class="reviews">{{ item.total_reviews }} reviews</span>
+                <ExternalRatingSource :attraction="item" />
               </div>
             </div>
           </div>
@@ -70,7 +69,7 @@
             </div>
             <p class="rec-location">{{ item.location }}</p>
             <div class="rec-footer">
-              <span class="rating">★ {{ item.avg_rating }}</span>
+              <ExternalRatingSource :attraction="item" />
             </div>
           </div>
         </div>
@@ -101,8 +100,8 @@
             <h3>{{ item.name }}</h3>
             <p class="rec-location">{{ item.location }}</p>
             <div class="rec-footer">
-              <span class="rating">★ {{ item.avg_rating }}</span>
-              <span class="score">{{ item.score }} trending</span>
+              <ExternalRatingSource :attraction="item" />
+              <span class="score">{{ item.trending_score }} trending</span>
             </div>
           </div>
         </div>
@@ -115,6 +114,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { algoAPI } from '@/api/client.js'
+import ExternalRatingSource from '../components/ExternalRatingSource.vue'
 
 const router = useRouter()
 const loading = ref(false)
@@ -145,6 +145,7 @@ const fetchUserCluster = async () => {
   }
 }
 
+// 个性推荐需要登录后才能读取用户历史。
 const fetchPersonalRecs = async () => {
   if (!isLoggedIn.value) return
   loading.value = true
@@ -264,6 +265,9 @@ onMounted(async () => {
 .trending-card {
   display: flex;
   gap: 1rem;
+  padding: 1.15rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   cursor: pointer;
   transition: transform 0.2s;
 }
@@ -290,6 +294,7 @@ onMounted(async () => {
 }
 .trending-info {
   flex: 1;
+  min-width: 0;
 }
 .trending-info h3 {
   color: #1a5e63;
@@ -319,6 +324,9 @@ onMounted(async () => {
   gap: 1rem;
 }
 .rec-card {
+  padding: 1.15rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
 }
@@ -335,6 +343,7 @@ onMounted(async () => {
 .rec-header h3 {
   color: #1a5e63;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 .match-badge {
   background: #e8f4f8;

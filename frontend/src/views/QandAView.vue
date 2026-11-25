@@ -138,8 +138,7 @@ const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { year: 'numer
 
 const loadAttractions = async () => {
   try {
-    const res = await attractionsAPI.list({ per_page: 100 })
-    attractions.value = res.data.attractions
+    attractions.value = await attractionsAPI.all()
   } catch (e) { console.error(e) }
 }
 
