@@ -14,6 +14,13 @@
 
 系统使用user、moderator和admin三种角色，未登录访客可以浏览公开页面。景点列表每页显示9条，提供搜索、分类和排序；本站评价最多400个字符。
 
+## 默认账号
+
+| 角色 | 用户名 | 密码 |
+|---|---|---|
+| 管理员 | admin | admin123 |
+| 普通用户 | demo | demo123 |
+
 ## 技术栈
 
 前端使用Vue 3、JavaScript、Vite、Vue Router、Pinia和Axios，地图采用Leaflet，统计图表采用ECharts。
@@ -33,3 +40,5 @@
 ## 项目结构
 
 `backend`保存后端接口、数据模型、分析服务、数据和图片；`frontend`保存前端页面、组件和样式；`scripts`保存项目运行脚本。
+
+`backend/belarus_tourism.sql`保存22张表的结构和现有数据，包括1000条公开景点、232条已归档景点、外部评分、1898条评论摘录，以及文章、问答和收藏等记录。图片保存在`backend/static/images`，数据库保存图片地址。
